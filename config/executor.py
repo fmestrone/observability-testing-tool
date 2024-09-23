@@ -1,4 +1,5 @@
 import random
+import sys
 from collections.abc import Callable
 
 from datetime import timedelta, datetime
@@ -8,9 +9,13 @@ from time import sleep
 
 from config.parser import parse_config, prepare_config
 
+if len(sys.argv) == 2:
+    filename = sys.argv[1]
+else:
+    filename = None
 
 try:
-    _config = parse_config()
+    _config = parse_config(filename)
     prepare_config(_config)
 except Exception as e:
     print(e)
@@ -56,8 +61,6 @@ def expand_variables(variables: dict) -> dict:
             raise ValueError(f"Data source for {var_name} does not exist")
         data_source_value = data_source["value"]
         match data_source["type"]:
-            case "env":
-                variables_expanded[var_name] = getenv(data_source_value)
             case "list":
                 var_list_selector = var_config.get("selector")
                 if var_list_selector is None or var_list_selector not in _datasource_list_selectors:
@@ -76,6 +79,9 @@ def expand_variables(variables: dict) -> dict:
                         rand_range.get("from"),
                         rand_range.get("to")
                     )
+            case "env" | "gce-metadata":
+                variables_expanded[var_name] = data_source["__value__"]
+
     return variables_expanded
 
 

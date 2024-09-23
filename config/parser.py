@@ -1,17 +1,30 @@
 import re
+from os import getenv
+
 import yaml
 
 from datetime import timedelta
 from datetime import datetime
 
+import requests
 
 _regex_duration = re.compile(r'^ *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<millis>\d+?)ms)? *$')
 
-_datasource_types = ["env", "list", "random"]
+_datasource_types = ["env", "list", "random", "gce-metadata"]
 _datasource_random_values = ["int", "float"]
 
 
 def parse_float_range(range_cfg: str) -> dict:
+    """
+    Parses a floating point range (e.g. "13.9~39.3") into a dict object, with `from`
+    and `to` keys.
+
+    If only one value is provided (e.g. "15.3937"), that will be the end of the range, with the
+    beginning of the range set to 0.0.
+
+    :param range_cfg: A string identifying a floating point range (e.g. "13.9~39.3")
+    :return dict: A dictionary object with `from` and `to` keys
+    """
     values = range_cfg.split('~') # otherwise cannot have negative values
     if len(values) <= 0 or len(values) > 2:
         raise ValueError("Range string is not formatted correctly")
@@ -22,6 +35,16 @@ def parse_float_range(range_cfg: str) -> dict:
 
 
 def parse_int_range(range_cfg: str) -> dict:
+    """
+    Parses an integer range (e.g. "13~39") into a dict object, with `from`
+    and `to` keys.
+
+    If only one value is provided (e.g. "15"), that will be the end of the range, with the
+    beginning of the range set to 0.
+
+    :param range_cfg: A string identifying an integer range (e.g. "13~39")
+    :return dict: A dictionary object with `from` and `to` keys
+    """
     values = range_cfg.split('~') # otherwise cannot have negative values
     if len(values) <= 0 or len(values) > 3:
         raise RuntimeError("Range string is not formatted correctly")
@@ -48,11 +71,11 @@ def parse_timedelta_interval(duration_cfg: str) -> timedelta | dict:
 
 def parse_timedelta_value(duration_val: str) -> timedelta:
     """
-    Parse a time string e.g. (2h13m) into a timedelta object.
+    Parses a time string (e.g. 2h13m) into a timedelta object.
 
     Modified from virhilo's answer at https://stackoverflow.com/a/4628148/851699
 
-    :param duration_val: A string identifying a duration.  (eg. 2h13m)
+    :param duration_val: A string identifying a duration.  (e.g. 2h13m)
     :return datetime.timedelta: A datetime.timedelta object
     """
     parts = _regex_duration.match(duration_val)
@@ -85,7 +108,8 @@ def configure_job_timings(job_config: dict):
         raise RuntimeError("End time of job must be later than start time")
 
 
-def parse_config(file: str = "config.yaml") -> dict:
+def parse_config(file: str = None) -> dict:
+    if file is None: file = "config.yaml" # makes it easier to pass None at point of call
     with open(file, 'r') as file:
         config = yaml.safe_load(file)
     return config
@@ -107,6 +131,13 @@ def prepare_config(config: dict):
 
     for job in config["monitoringJobs"]:
         configure_monitoring_job(job)
+
+
+def get_gce_metadata(metadata_key: str) -> str:
+    # This will only work from inside a GCE instance
+    metadata_server = "http://metadata.google.internal/computeMetadata/v1/"
+    metadata_flavor = {"Metadata-Flavor" : "Google"}
+    return requests.get(metadata_server + metadata_key, headers = metadata_flavor).text
 
 
 def configure_logging_job(logging_job: dict):
@@ -132,6 +163,7 @@ def configure_data_source(data_source: dict):
             case "env":
                 if not isinstance(data_source_value, str):
                     raise RuntimeError("Data source value for 'env' must be a string")
+                data_source["__value__"] = getenv(data_source_value)
             case "random":
                 if data_source_value not in _datasource_random_values:
                     raise RuntimeError("Random value must be a float or an int")
@@ -140,4 +172,6 @@ def configure_data_source(data_source: dict):
                     data_source["range"] = parse_int_range(data_source_range)
                 elif data_source_value == "float":
                     data_source["range"] = parse_float_range(data_source_range)
+            case "gce-metadata":
+                data_source["__value__"] = get_gce_metadata(data_source_value)
 
