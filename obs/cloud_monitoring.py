@@ -2,7 +2,7 @@ from google.cloud import monitoring_v3
 from google.api import metric_pb2
 from google.api import label_pb2
 
-import time
+import datetime
 
 from os import getenv
 
@@ -12,9 +12,9 @@ client = monitoring_v3.MetricServiceClient()
 
 def prepare_time_interval_gauge(start_time = None):
     if start_time is None:
-        start_time = time.time()
-    seconds = int(start_time)  # Integer part of time() is the number of seconds
-    nanos = int((start_time - seconds) * 10 ** 9)
+        start_time = datetime.datetime.today()
+    seconds = int(start_time.timestamp())  # Integer part of time() is the number of seconds
+    nanos = int((start_time.timestamp() - seconds) * 10 ** 9)
     return monitoring_v3.TimeInterval(
         {"end_time": {"seconds": seconds, "nanos": nanos}}
     )
@@ -22,9 +22,9 @@ def prepare_time_interval_gauge(start_time = None):
 
 def prepare_time_interval(start_time = None, delta = None):
     if start_time is None:
-        start_time = time.time()
-    seconds = int(start_time)  # Integer part of time() is the number of seconds
-    nanos = int((start_time - seconds) * 10 ** 9)
+        start_time = datetime.datetime.today()
+    seconds = int(start_time.timestamp())  # Integer part of time() is the number of seconds
+    nanos = int((start_time.timestamp() - seconds) * 10 ** 9)
     if delta is None:
         delta = 1 # Deafult interval of one second
     delta_seconds = int(delta)
@@ -46,7 +46,7 @@ def submit_delta_metric(value, metric_type, when = None, project_id = None, metr
     pass
 
 
-def submit_metric(value, metric_type, interval, project_id = None, metric_labels = None, resource_type = None, resource_labels = None):
+def submit_metric(value: float, metric_type, interval, project_id = None, metric_labels = None, resource_type = None, resource_labels = None):
     # Create a data point for the timestamp interval
     point = monitoring_v3.Point({"interval": interval, "value": {"double_value": value}})
 

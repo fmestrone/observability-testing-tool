@@ -116,7 +116,7 @@ def run_logging_jobs():
 
 
 def run_monitoring_jobs():
-    _run_jobs("loggingJobs", handle_monitoring_job)
+    _run_jobs("monitoringJobs", handle_monitoring_job)
 
 
 def _run_jobs(jobs_key: str, handler: Callable):
@@ -213,17 +213,20 @@ def create_metrics_descriptors():
 def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
     metric_labels = job.get("metricLabels")
     resource_labels = job.get("resourceLabels")
+    project_id = job.get("projectId")
     if vars_dict is None:
-        metric_value = job["metricValue"]
+        metric_value = float(job["metricValue"])
     else:
-        metric_value = format_str_payload(vars_dict, job["metricValue"])
+        metric_value = float(format_str_payload(vars_dict, job["metricValue"]))
         if metric_labels is not None:
             metric_labels = format_dict_payload(vars_dict, metric_labels)
         if resource_labels is not None:
             resource_labels = format_dict_payload(vars_dict, resource_labels)
+        if project_id is not None:
+            project_id = format_str_payload(vars_dict, project_id)
     submit_gauge_metric(
         metric_value, job["metricType"], submit_time,
-        project_id=job.get("projectId"),
+        project_id=project_id,
         metric_labels=metric_labels,
         resource_type=job.get("resourceType"),
         resource_labels=resource_labels

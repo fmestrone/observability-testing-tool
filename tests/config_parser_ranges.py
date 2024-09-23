@@ -12,37 +12,37 @@ class FloatRangeTests(unittest.TestCase):
 
     def test_single_int_value(self):
         result = parse_float_range("13")
-        self.assertEqual(result, { "from": 0.0, "to": 13.0 })
+        self.assertEqual({ "from": 0.0, "to": 13.0 }, result)
 
 
     def test_double_int_values(self):
         result = parse_float_range("13~39")
-        self.assertEqual(result, { "from": 13.0, "to": 39.0 })
+        self.assertEqual({ "from": 13.0, "to": 39.0 }, result)
 
 
     def test_single_float_value(self):
         result = parse_float_range("13.5")
-        self.assertEqual(result, { "from": 0.0, "to": 13.5 })
+        self.assertEqual({ "from": 0.0, "to": 13.5 }, result)
 
 
     def test_double_float_values(self):
         result = parse_float_range("13.513~39.7979")
-        self.assertEqual(result, { "from": 13.513, "to": 39.7979 })
+        self.assertEqual({ "from": 13.513, "to": 39.7979 }, result)
 
 
     def test_single_float_value_spaces(self):
         result = parse_float_range("  13.5 ")
-        self.assertEqual(result, { "from": 0.0, "to": 13.5 })
+        self.assertEqual({ "from": 0.0, "to": 13.5 }, result)
 
 
     def test_double_float_values_spaces(self):
         result = parse_float_range(" 13.513  ~  39.7979 ")
-        self.assertEqual(result, { "from": 13.513, "to": 39.7979 })
+        self.assertEqual({ "from": 13.513, "to": 39.7979 }, result)
 
 
     def test_double_mixed_values(self):
         result = parse_float_range("13~39.379")
-        self.assertEqual(result, { "from": 13.0, "to": 39.379 })
+        self.assertEqual({ "from": 13.0, "to": 39.379 }, result)
 
 
     def test_single_nan_value(self):

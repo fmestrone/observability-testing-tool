@@ -8,7 +8,7 @@ from datetime import datetime
 
 import requests
 
-_regex_duration = re.compile(r'^ *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<millis>\d+?)ms)? *$')
+_regex_duration = re.compile(r'^ *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
 _datasource_types = ["env", "list", "random", "gce-metadata"]
 _datasource_random_values = ["int", "float"]

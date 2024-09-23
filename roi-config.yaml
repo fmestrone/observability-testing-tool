@@ -90,9 +90,19 @@ monitoringJobs:
       python_app_ip: "{ip}"
     resourceType: "gce_instance"
     resourceLabels:
-      instance_id: "1234567890123456789"
-      zone: "us-central1-f"
+      instance_id: "{vmId}"
+      zone: "{vmZone}"
     metricValue: "{inst1_cpu_usage}"
+    projectId: "{vmProjectId}"
     variables:
       inst1_cpu_usage:
         dataSource: "cpuUsageValue"
+      ip:
+        dataSource: "someIpAddresses"
+        selector: "any"
+      vmProjectId:
+        dataSource: "vmProjectId"
+      vmId:
+        dataSource: "vmId"
+      vmZone:
+        dataSource: "vmZone"
