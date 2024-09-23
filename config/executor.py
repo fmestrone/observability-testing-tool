@@ -1,5 +1,6 @@
 import random
 import sys
+from traceback import format_exc
 from collections.abc import Callable
 
 from datetime import timedelta, datetime
@@ -14,10 +15,18 @@ if len(sys.argv) == 2:
 else:
     filename = None
 
+ADVOBS_DEBUG = getenv("ADVOBS_DEBUG") == "True"
+
 try:
     _config = parse_config(filename)
+    if _config is None:
+        print("No config information was found. Is the file empty?")
+        exit(1)
     prepare_config(_config)
 except Exception as e:
+    if ADVOBS_DEBUG:
+        print(format_exc())
+        print(_config)
     print(e)
     exit(1)
 
@@ -31,7 +40,7 @@ if _config.get("cloudConfig") is not None:
 from obs.cloud_logging import submit_log_entry_text, submit_log_entry_json
 from obs.cloud_monitoring import submit_gauge_metric, submit_metric_descriptor
 
-if getenv("DEBUG") is not None: print(_config)
+if ADVOBS_DEBUG is not None: print(_config)
 
 _datasource_list_selectors = ["any", "first", "last", "all"]
 
@@ -67,7 +76,7 @@ def expand_variables(variables: dict) -> dict:
                     raise ValueError(f"Variable {var_name} uses an invalid list selector")
                 variables_expanded[var_name] = expand_list_variable(var_list_selector, data_source_value)
             case "random":
-                rand_range = var_config.get("range")
+                rand_range = data_source.get("range")
                 if data_source_value == "int":
                     variables_expanded[var_name] = randrange(
                         rand_range.get("from"),
@@ -133,6 +142,18 @@ def _run_jobs(jobs_key: str, handler: Callable):
 
 
 def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
+
+    labels = job.get("labels")
+    resource_labels = job.get("resourceLabels")
+    other = job.get("other")
+    if vars_dict is not None:
+        if labels is not None:
+            labels = {k: format_str_payload(vars_dict, v) for k, v in labels.items()}
+        if resource_labels is not None:
+            resource_labels = {k: format_str_payload(vars_dict, v) for k, v in resource_labels.items()}
+        if other is not None:
+            other = {k: format_str_payload(vars_dict, v) for k, v in other.items()}
+
     if job.get("jsonPayload") is not None:
         if vars_dict is None:
             json_payload = job["jsonPayload"]
@@ -141,11 +162,12 @@ def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
         submit_log_entry_json(
             job["level"], json_payload,
             resource_type=job.get("resourceType"),
-            resource_labels=job.get("resourceLabels"),
-            labels=job.get("labels"),
-            other=job.get("other"),
+            resource_labels=resource_labels,
+            labels=labels,
+            other=other,
             when=submit_time.timestamp()
         )
+
     elif job.get("textPayload") is not None:
         if vars_dict is None:
             text_payload = job["textPayload"]
@@ -154,9 +176,9 @@ def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
         submit_log_entry_text(
             job["level"], text_payload,
             resource_type=job.get("resourceType"),
-            resource_labels=job.get("resourceLabels"),
-            labels=job.get("labels"),
-            other=job.get("other"),
+            resource_labels=resource_labels,
+            labels=labels,
+            other=other,
             when=submit_time.timestamp()
         )
 
@@ -165,12 +187,19 @@ def create_metrics_descriptors():
     for metric_descriptor in _config["metricDescriptors"]:
         sleep(0.01)
 
-        # cannot think of a useful use case for variables in descriptor, so leaving them out
+        project_id = metric_descriptor.get("projectId")
+        if metric_descriptor.get("variables") is not None:
+            vars_dict = expand_variables(metric_descriptor["variables"])
+        else:
+            vars_dict = None
+        if vars_dict is not None:
+            if project_id is not None:
+                project_id = format_str_payload(vars_dict, project_id)
 
         submit_metric_descriptor(
             metric_descriptor["type"], metric_descriptor["metricKind"], metric_descriptor["valueType"],
             name=metric_descriptor.get("name"),
-            project_id=metric_descriptor.get("projectId"),
+            project_id=project_id,
             unit=metric_descriptor.get("unit"),
             description=metric_descriptor.get("description"),
             display_name=metric_descriptor.get("displayName"),

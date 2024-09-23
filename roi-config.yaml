@@ -1,0 +1,98 @@
+dataSources:
+  vmId:
+    type: "gce-metadata"
+    value: "instance/id"
+  vmZone:
+    type: "gce-metadata"
+    value: "instance/zone"
+  vmProjectNumber:
+    type: "gce-metadata"
+    value: "project/numeric-project-id"
+  vmProjectId:
+    type: "gce-metadata"
+    value: "project/project-id"
+  someIpAddresses:
+    type: "list"
+    value:
+      - 192.168.0.1
+      - 192.168.0.12
+      - 192.168.0.13
+      - 192.168.0.14
+      - 192.168.0.15
+      - 192.168.0.17
+      - 192.168.0.19
+      - 192.168.0.3
+      - 192.168.0.31
+      - 192.168.0.33
+      - 192.168.0.35
+      - 192.168.0.39
+  cpuUsageValue:
+    type: "random"
+    value: "float"
+    range: "10.0~99.0"
+
+loggingJobs:
+  - startTime: "18/09/2024T16:45:00.00000"
+    endTime: "18/09/2024T19:45:00.00000"
+    frequency: "45s~1m30s"
+    textPayload: "Invalid connection request from {ip}"
+    level: WARNING
+    resourceType: "gce_instance"
+    resourceLabels:
+      instance_id: "{vmId}"
+      zone: "{vmZone}"
+    labels:
+      activity: "{activity}"
+    other:
+      trace: "T01234-YXZ"
+      http_request:
+        requestUrl: "localhost"
+    variables:
+      vmId:
+        dataSource: "vmId"
+      vmZone:
+        dataSource: "vmZone"
+      activity:
+        dataSource: "cpuUsageValue"
+      ip:
+        dataSource: "someIpAddresses"
+        selector: "any"
+
+metricDescriptors:
+  - name: "python_app_count"
+    projectId: "{vmProjectId}"
+    type: "advobv/queries/python_app_count"
+    metricKind: "GAUGE"
+    valueType: "DOUBLE"
+    unit: "ms"
+    description: "This is the Pyhton App metric for the Advanced Observability Querying course."
+    displayName: "Python App Count Metric"
+    launchStage: "GA"
+    labels:
+      - key: "python_app_ip"
+        valueType: "STRING"
+        description: "This is the Pyhton App IP address for the Advanced Observability Querying course."
+    monitoredResourceTypes:
+      - "gce_instance"
+    variables:
+      vmProjectId:
+        dataSource: "vmProjectId"
+
+monitoringJobs:
+  - live: false
+    startTime: "18/09/2024T16:45:09.00000"
+    startOffset: "5m"
+    endTime: "18/09/2024T17:45:09.00000"
+    endOffset: "1h"
+    frequency: "15s"
+    metricType: "advobv/queries/python_app_count"
+    metricLabels:
+      python_app_ip: "{ip}"
+    resourceType: "gce_instance"
+    resourceLabels:
+      instance_id: "1234567890123456789"
+      zone: "us-central1-f"
+    metricValue: "{inst1_cpu_usage}"
+    variables:
+      inst1_cpu_usage:
+        dataSource: "cpuUsageValue"

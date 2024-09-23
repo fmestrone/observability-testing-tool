@@ -24,12 +24,12 @@ dataSources:
   cpuUsageValue:
     type: "random"
     value: "float"
-    range: "10.0-99.0"
+    range: "10.0 ~ 99.0"
 
 loggingJobs:
   - startTime: "18/09/2024T16:45:00.00000"
     endTime: "18/09/2024T17:45:00.00000"
-    frequency: "10s-50s"
+    frequency: "10s ~ 50s"
     textPayload: "hello from python log generator in project {project} from {ipAddress}"
     level: DEBUG
     resourceType: "gce_instance"
@@ -50,7 +50,7 @@ loggingJobs:
         selector: "any"
   - startTime: "18/09/2024T16:45:03.00000"
     endTime: "18/09/2024T17:45:03.00000"
-    frequency: "5s-30s"
+    frequency: "5s ~ 30s"
     jsonPayload:
       theMessage: "This is a cool logging message"
       ipAddress: "{ip}"
@@ -76,7 +76,7 @@ loggingJobs:
         selector: "any"
   - startTime: "18/09/2024T16:45:09.00000"
     endTime: "18/09/2024T17:45:09.00000"
-    frequency: "10s-20s"
+    frequency: "10s ~ 20s"
     jsonPayload:
       theMessage: "This is a cool logging message"
       ipAddress: "{ip}"

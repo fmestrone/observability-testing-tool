@@ -135,6 +135,7 @@ def prepare_config(config: dict):
 
 def get_gce_metadata(metadata_key: str) -> str:
     # This will only work from inside a GCE instance
+    # See https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys
     metadata_server = "http://metadata.google.internal/computeMetadata/v1/"
     metadata_flavor = {"Metadata-Flavor" : "Google"}
     return requests.get(metadata_server + metadata_key, headers = metadata_flavor).text

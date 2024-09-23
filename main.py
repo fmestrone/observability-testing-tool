@@ -1,4 +1,4 @@
-import config.executor
+import config.executor # keep this import! it loads the configuration
 
 from config.executor import run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
 
