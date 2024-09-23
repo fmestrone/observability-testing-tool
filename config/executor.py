@@ -1,5 +1,6 @@
 import random
 import sys
+from importlib.resources import open_text
 from traceback import format_exc
 from collections.abc import Callable
 
@@ -148,11 +149,11 @@ def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
     other = job.get("other")
     if vars_dict is not None:
         if labels is not None:
-            labels = {k: format_str_payload(vars_dict, v) for k, v in labels.items()}
+            labels = format_dict_payload(vars_dict, labels)
         if resource_labels is not None:
-            resource_labels = {k: format_str_payload(vars_dict, v) for k, v in resource_labels.items()}
+            resource_labels = format_dict_payload(vars_dict, resource_labels)
         if other is not None:
-            other = {k: format_str_payload(vars_dict, v) for k, v in other.items()}
+            other = format_dict_payload(vars_dict, other)
 
     if job.get("jsonPayload") is not None:
         if vars_dict is None:
@@ -217,9 +218,9 @@ def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
     else:
         metric_value = format_str_payload(vars_dict, job["metricValue"])
         if metric_labels is not None:
-            metric_labels = {k: format_str_payload(vars_dict, v) for k, v in job["metricLabels"].items()}
+            metric_labels = format_dict_payload(vars_dict, metric_labels)
         if resource_labels is not None:
-            resource_labels = {k: format_str_payload(vars_dict, v) for k, v in job["resource_labels"].items()}
+            resource_labels = format_dict_payload(vars_dict, resource_labels)
     submit_gauge_metric(
         metric_value, job["metricType"], submit_time,
         project_id=job.get("projectId"),
