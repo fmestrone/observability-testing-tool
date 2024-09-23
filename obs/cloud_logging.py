@@ -10,9 +10,30 @@ from google.cloud.logging_v2 import Resource
 client = google.cloud.logging.Client()
 client.setup_logging(log_level=logging.DEBUG)
 
-logger = logging.getLogger("googlecloud_adv_obs_queries")
 
-def submit_log_entry_text(level, message, labels = None, resource_type = None, resource_labels = None, other = None):
+class TimestampFilter(logging.Filter):
+    """
+    This is a logging filter which will check for a `timestamp` attribute on a
+    given LogRecord, and if present it will override the LogRecord creation time
+    (and msecs) to be that of the timestamp (specified as a time.time()-style
+    value).
+    This allows one to override the date/time output for log entries by specifying
+    `timestamp` in the `extra` option to the logging call.
+    """
+    def filter(self, record):
+        if hasattr(record, "logger__timestamp"):
+            record.created = record.logger__timestamp
+            record.msecs = (record.logger__timestamp % 1) * 1000
+            del record.logger__timestamp
+        return True
+
+
+logger = logging.getLogger("googlecloud_adv_obs_queries")
+logger.addFilter(TimestampFilter())
+
+
+def submit_log_entry_text(level, message, when = None, labels = None, resource_type = None, resource_labels = None, other = None):
+
     if other is None:
         # otherwise default argument is mutable
         # https://stackoverflow.com/questions/41686829
@@ -27,8 +48,12 @@ def submit_log_entry_text(level, message, labels = None, resource_type = None, r
         **other
     }
 
+    if when is not None:
+        extra["logger__timestamp"] = when
+
     logger.log(getLevelName(level), message, extra=extra)
 
-def submit_log_entry_json(level, payload, metrics_labels = None, resource_type = None, resource_labels = None, other = None):
-    submit_log_entry_text(level, json.dumps(payload), metrics_labels, resource_type, resource_labels, other)
+
+def submit_log_entry_json(level, payload, when = None, labels = None, resource_type = None, resource_labels = None, other = None):
+    submit_log_entry_text(level, json.dumps(payload), when, labels, resource_type, resource_labels, other)
 
