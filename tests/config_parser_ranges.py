@@ -45,6 +45,11 @@ class FloatRangeTests(unittest.TestCase):
         self.assertEqual({ "from": 13.0, "to": 39.379 }, result)
 
 
+    def test_double_negative_values(self):
+        result = parse_float_range("-13~-39.379")
+        self.assertEqual({ "from": -13.0, "to": -39.379 }, result)
+
+
     def test_single_nan_value(self):
         with self.assertRaises(ValueError):
             parse_float_range("aws")

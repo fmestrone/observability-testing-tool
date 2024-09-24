@@ -9,7 +9,7 @@ from os import environ, getenv
 from random import randrange
 from time import sleep
 
-from config.parser import parse_config, prepare_config
+from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
 if len(sys.argv) == 2:
     filename = sys.argv[1]
@@ -134,12 +134,7 @@ def _run_jobs(jobs_key: str, handler: Callable):
 
             handler(submit_time, job, vars_dict)
 
-            if isinstance(frequency, timedelta):
-                submit_time += frequency
-            elif isinstance(frequency, dict):
-                rand_num_secs = random.uniform(frequency["from"].seconds, frequency["to"].seconds)
-                next_frequency = timedelta(seconds=rand_num_secs)
-                submit_time += next_frequency
+            submit_time += next_timedelta_from_interval(frequency)
 
 
 def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):

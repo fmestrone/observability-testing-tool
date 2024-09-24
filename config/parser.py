@@ -1,3 +1,4 @@
+import random
 import re
 from os import getenv
 
@@ -8,10 +9,21 @@ from datetime import datetime
 
 import requests
 
-_regex_duration = re.compile(r'^ *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
+_regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
 _datasource_types = ["env", "list", "random", "gce-metadata"]
 _datasource_random_values = ["int", "float"]
+
+
+def next_timedelta_from_interval(interval_or_range) -> timedelta:
+    if isinstance(interval_or_range, timedelta):
+        return interval_or_range
+    elif isinstance(interval_or_range, dict):
+        rand_num_secs = random.uniform(interval_or_range["from"].seconds, interval_or_range["to"].seconds)
+        next_frequency = timedelta(seconds=rand_num_secs)
+        return next_frequency
+    else:
+        raise ValueError(f"Invalid interval value")
 
 
 def parse_float_range(range_cfg: str) -> dict:
@@ -59,7 +71,7 @@ def parse_int_range(range_cfg: str) -> dict:
 def parse_timedelta_interval(duration_cfg: str) -> timedelta | dict:
     durations = duration_cfg.split('~') # for consistency with int/float range parsers
     if len(durations) <= 0 or len(durations) > 2:
-        raise RuntimeError("Duration string is not formatted correctly")
+        raise ValueError("Duration string is not formatted correctly")
     elif len(durations) == 1:
         return parse_timedelta_value(durations[0])
     else:
@@ -80,32 +92,46 @@ def parse_timedelta_value(duration_val: str) -> timedelta:
     """
     parts = _regex_duration.match(duration_val)
     if parts is None:
-        raise RuntimeError("Could not parse any duration information from '{}'.  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(parts))
+        raise ValueError("Could not parse any duration information from '{}'.  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(parts))
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
-    return timedelta(**time_params)
+    if parts.group(1) == "-":
+        return -timedelta(**time_params)
+    else:
+        return timedelta(**time_params)
 
+def parse_datetime(datetime_str: str) -> datetime:
+    return datetime.fromisoformat(datetime_str)
 
 def configure_job_timings(job_config: dict):
-    job_config["frequency"] = parse_timedelta_interval(job_config["frequency"])
-    if job_config.get("startOffset") is not None:
-        job_config["startOffset"] = parse_timedelta_interval(job_config["startOffset"])
-    if job_config.get("endOffset") is not None:
-        job_config["endOffset"] = parse_timedelta_interval(job_config["endOffset"])
+    job_config["live"] = isinstance(job_config.get("live"), bool) and job_config["live"] == True
 
-    if job_config.get("live", False):
-        job_config["startTime"] = datetime.strptime(job_config["startTime"], "%d/%m/%YT%H:%M:%S.%f")
-        if job_config.get("endTime") is None:
-            job_config["endTime"] = datetime.today()
-        else:
-            job_config["endTime"] = datetime.strptime(job_config["endTime"], "%d/%m/%YT%H:%M:%S.%f")
+    job_config["frequency"] = parse_timedelta_interval(job_config["frequency"])
+
+    if job_config.get("startTime") is None and job_config.get("endTime") is None:
+        job_config["startTime"] = datetime.today()
+        job_config["endTime"] = job_config["startTime"]
+    elif job_config.get("startTime") is None:
+        job_config["endTime"] = parse_datetime(job_config["endTime"])
+        job_config["startTime"] = job_config["endTime"]
+    elif job_config.get("endTime") is None:
+        job_config["startTime"] = parse_datetime(job_config["startTime"])
+        job_config["endTime"] = job_config["startTime"]
     else:
-        job_config["endTime"] = datetime.strptime(job_config["endTime"], "%d/%m/%YT%H:%M:%S.%f")
-        if job_config.get("startTime") is None:
-            job_config["startTime"] = datetime.today()
-        else:
-            job_config["startTime"] = datetime.strptime(job_config["startTime"], "%d/%m/%YT%H:%M:%S.%f")
+        job_config["startTime"] = parse_datetime(job_config["startTime"])
+        job_config["endTime"] = parse_datetime(job_config["endTime"])
+
+    if job_config.get("startOffset") is not None:
+        job_config["originalStartTime"] = job_config["startTime"]
+        job_config["startOffset"] = parse_timedelta_interval(job_config["startOffset"])
+        job_config["startTime"] = job_config["originalStartTime"] + next_timedelta_from_interval(job_config["startOffset"])
+
+    if job_config.get("endOffset") is not None:
+        job_config["originalEndTime"] = job_config["endTime"]
+        job_config["endOffset"] = parse_timedelta_interval(job_config["endOffset"])
+        job_config["endTime"] = job_config["originalEndTime"] + next_timedelta_from_interval(job_config["endOffset"])
+
     if job_config["startTime"] >= job_config["endTime"]:
-        raise RuntimeError("End time of job must be later than start time")
+        raise ValueError("End time of job must be later than start time")
 
 
 def parse_config(file: str = None) -> dict:
