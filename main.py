@@ -1,13 +1,18 @@
 import config.executor # keep this import! it loads the configuration
 
+from config.common import debug_log
+
 from config.executor import run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
 
 
 def main():
-    # https://docs.python.org/3/library/multiprocessing.html
-    run_logging_jobs()
+    p1 = run_logging_jobs()
+    debug_log("Done with logging tasks. Now proceeding with monitoring tasks...")
     create_metrics_descriptors()
-    run_monitoring_jobs()
+    p2 = run_monitoring_jobs()
+    debug_log("Done with monitoring tasks. Now waiting for live jobs to terminate...")
+    if p1 is not None: p1.join()
+    if p2 is not None: p2.join()
 
 
 if __name__ == '__main__':

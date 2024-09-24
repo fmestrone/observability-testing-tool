@@ -19,7 +19,7 @@ def next_timedelta_from_interval(interval_or_range) -> timedelta:
     if isinstance(interval_or_range, timedelta):
         return interval_or_range
     elif isinstance(interval_or_range, dict):
-        rand_num_secs = random.uniform(interval_or_range["from"].seconds, interval_or_range["to"].seconds)
+        rand_num_secs = random.uniform(interval_or_range["from"].total_seconds(), interval_or_range["to"].total_seconds())
         next_frequency = timedelta(seconds=rand_num_secs)
         return next_frequency
     else:
@@ -103,7 +103,7 @@ def parse_datetime(datetime_str: str) -> datetime:
     return datetime.fromisoformat(datetime_str)
 
 def configure_job_timings(job_config: dict):
-    job_config["live"] = isinstance(job_config.get("live"), bool) and job_config["live"] == True
+    current_timestamp = datetime.today() # create now so the default startTime is later than this point
 
     job_config["frequency"] = parse_timedelta_interval(job_config["frequency"])
 
@@ -130,6 +130,9 @@ def configure_job_timings(job_config: dict):
         job_config["endOffset"] = parse_timedelta_interval(job_config["endOffset"])
         job_config["endTime"] = job_config["originalEndTime"] + next_timedelta_from_interval(job_config["endOffset"])
 
+    if job_config["live"] and job_config["startTime"] < current_timestamp:
+        raise ValueError("Live job must start now or later")
+
     if job_config["startTime"] >= job_config["endTime"]:
         raise ValueError("End time of job must be later than start time")
 
@@ -152,11 +155,15 @@ def prepare_config(config: dict):
     for datasource in config["dataSources"].values():
         configure_data_source(datasource)
 
+    config["hasLiveLoggingJobs"] = False
     for job in config["loggingJobs"]:
-        configure_logging_job(job)
+        if configure_logging_job(job) and config.get("hasLiveLoggingJobs") is False:
+            config["hasLiveLoggingJobs"] = True
 
+    config["hasLiveMonitoringJobs"] = False
     for job in config["monitoringJobs"]:
-        configure_monitoring_job(job)
+        if configure_monitoring_job(job) and config.get("hasLiveLoggingJobs") is False:
+            config["hasLiveMonitoringJobs"] = True
 
 
 def get_gce_metadata(metadata_key: str) -> str:
@@ -168,13 +175,21 @@ def get_gce_metadata(metadata_key: str) -> str:
 
 
 def configure_logging_job(logging_job: dict):
+    logging_job["live"] = isinstance(logging_job.get("live"), bool) and logging_job["live"] == True
+
     if logging_job.get("textPayload") is None and logging_job.get("jsonPayload") is None:
         raise RuntimeError("Missing 'textPayload' or 'jsonPayload' in config")
     configure_job_timings(logging_job)
 
+    return logging_job["live"]
+
 
 def configure_monitoring_job(monitoring_job: dict):
+    monitoring_job["live"] = isinstance(monitoring_job.get("live"), bool) and monitoring_job["live"] == True
+
     configure_job_timings(monitoring_job)
+
+    return monitoring_job["live"]
 
 
 def configure_data_source(data_source: dict):

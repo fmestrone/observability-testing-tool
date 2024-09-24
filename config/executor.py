@@ -1,14 +1,15 @@
 import random
+import sched
 import sys
-from importlib.resources import open_text
-from traceback import format_exc
+from multiprocessing import Process
 from collections.abc import Callable
 
-from datetime import timedelta, datetime
-from os import environ, getenv
+from datetime import datetime
+from os import environ
 from random import randrange
-from time import sleep
+from time import sleep, time
 
+from config.common import debug_log
 from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
 if len(sys.argv) == 2:
@@ -16,19 +17,15 @@ if len(sys.argv) == 2:
 else:
     filename = None
 
-ADVOBS_DEBUG = getenv("ADVOBS_DEBUG") == "True"
-
+_config = {}
 try:
     _config = parse_config(filename)
     if _config is None:
-        print("No config information was found. Is the file empty?")
+        debug_log("No config information was found. Is the file empty?")
         exit(1)
     prepare_config(_config)
 except Exception as e:
-    if ADVOBS_DEBUG:
-        print(format_exc())
-        print(_config)
-    print(e)
+    debug_log("There was an error parsing the configuration file", _config, e)
     exit(1)
 
 
@@ -41,7 +38,7 @@ if _config.get("cloudConfig") is not None:
 from obs.cloud_logging import submit_log_entry_text, submit_log_entry_json
 from obs.cloud_monitoring import submit_gauge_metric, submit_metric_descriptor
 
-if ADVOBS_DEBUG is not None: print(_config)
+debug_log("Final configuration settings", _config)
 
 _datasource_list_selectors = ["any", "first", "last", "all"]
 
@@ -111,17 +108,61 @@ def format_dict_payload(vars_dict: dict, obj: dict):
     return new_payload
 
 
-def run_logging_jobs():
-    _run_jobs("loggingJobs", handle_logging_job)
+def run_logging_jobs() -> Process:
+    # https://docs.python.org/3/library/multiprocessing.html
+    if _config["hasLiveLoggingJobs"]:
+        p = Process(target=_run_live_jobs, args=("loggingJobs", handle_logging_job))
+        p.start()
+    else:
+        p = None
+    _run_batch_jobs("loggingJobs", handle_logging_job)
+    return p
 
 
-def run_monitoring_jobs():
-    _run_jobs("monitoringJobs", handle_monitoring_job)
+def run_monitoring_jobs() -> Process:
+    # https://docs.python.org/3/library/multiprocessing.html
+    # https://docs.python.org/3/library/multiprocessing.html
+    if _config["hasLiveMonitoringJobs"]:
+        p = Process(target=_run_live_jobs, args=("monitoringJobs", handle_monitoring_job))
+        p.start()
+    else:
+        p = None
+    _run_batch_jobs("monitoringJobs", handle_monitoring_job)
+    return p
+
+def _run_live_jobs(jobs_key: str, handler: Callable):
+    schedule = sched.scheduler(time, sleep)
+    for idx, job in enumerate(_config[jobs_key], start=1):
+        if not job["live"]: continue
+        job_key = f"LiveJob [{jobs_key}/{idx}]"
+        debug_log(f"{job_key}: Queuing into scheduler", job)
+        if job["startTime"] > datetime.now():
+            schedule.enter(0, 1, _handle_live_job, (job_key, schedule, job, handler))
+        else:
+            schedule.enterabs(job["startTime"].timestamp(), 1, _handle_live_job, (job_key, schedule, job, handler))
+    schedule.run(True)
+    debug_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
+    exit(0)
 
 
-def _run_jobs(jobs_key: str, handler: Callable):
-    for job in _config[jobs_key]:
+def _handle_live_job(job_key: str, schedule: sched.scheduler, job: dict, handler: Callable):
+    debug_log(f"{job_key}: Running scheduled job", job)
+    if datetime.now() >= job["endTime"]: return
+    if job.get("variables") is not None:
+        vars_dict = expand_variables(job["variables"])
+    else:
+        vars_dict = None
+    handler(job_key, datetime.now(), job, vars_dict)
+    next_time = next_timedelta_from_interval(job["frequency"])
+    debug_log(f"{job_key}: Next Execution for in {next_time}")
+    schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (job_key, schedule, job, handler))
+
+
+def _run_batch_jobs(jobs_key: str, handler: Callable):
+    for idx, job in enumerate(_config[jobs_key], start=1):
+        if job["live"]: continue
         sleep(0.5)
+        job_key = f"BatchJob [{jobs_key}/{idx}]"
         submit_time = job["startTime"]
         end_time = job["endTime"]
         frequency = job["frequency"]
@@ -132,13 +173,12 @@ def _run_jobs(jobs_key: str, handler: Callable):
             else:
                 vars_dict = None
 
-            handler(submit_time, job, vars_dict)
+            handler(job_key, submit_time, job, vars_dict)
 
             submit_time += next_timedelta_from_interval(frequency)
 
 
-def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
-
+def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict: dict):
     labels = job.get("labels")
     resource_labels = job.get("resourceLabels")
     other = job.get("other")
@@ -205,7 +245,7 @@ def create_metrics_descriptors():
         )
 
 
-def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
+def handle_monitoring_job(job_key: str, submit_time: datetime, job: dict, vars_dict: dict):
     metric_labels = job.get("metricLabels")
     resource_labels = job.get("resourceLabels")
     project_id = job.get("projectId")
