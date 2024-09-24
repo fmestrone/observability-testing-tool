@@ -9,6 +9,8 @@ from datetime import datetime
 
 import requests
 
+__ADVOBS_NO_GCE_METADATA = (getenv("ADVOBS_NO_GCE_METADATA") == "True")
+
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
 _datasource_types = ["env", "list", "random", "gce-metadata"]
@@ -157,18 +159,19 @@ def prepare_config(config: dict):
 
     config["hasLiveLoggingJobs"] = False
     for job in config["loggingJobs"]:
-        if configure_logging_job(job) and config.get("hasLiveLoggingJobs") is False:
+        if configure_logging_job(job) and not config.get("hasLiveLoggingJobs"):
             config["hasLiveLoggingJobs"] = True
 
     config["hasLiveMonitoringJobs"] = False
     for job in config["monitoringJobs"]:
-        if configure_monitoring_job(job) and config.get("hasLiveLoggingJobs") is False:
+        if configure_monitoring_job(job) and not config.get("hasLiveLoggingJobs"):
             config["hasLiveMonitoringJobs"] = True
 
 
 def get_gce_metadata(metadata_key: str) -> str:
     # This will only work from inside a GCE instance
     # See https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys
+    if __ADVOBS_NO_GCE_METADATA: return "Dummy GCE Metadata"
     metadata_server = "http://metadata.google.internal/computeMetadata/v1/"
     metadata_flavor = {"Metadata-Flavor" : "Google"}
     return requests.get(metadata_server + metadata_key, headers = metadata_flavor).text

@@ -58,23 +58,30 @@ def expand_list_variable(selector, value):
         return None
 
 
-def expand_variables(variables: dict) -> dict:
+def expand_variables(variables: list) -> dict:
+    debug_log("Received request to expand variables", variables)
     variables_expanded = {}
-    for var_name, var_config in variables.items():
-        if not isinstance(var_config, dict) or var_config.get("dataSource") is None:
-            raise ValueError(f"Variable {var_name} is not configure correctly")
-        data_source = _config["dataSources"].get(var_config["dataSource"])
+    for idx, var_config in enumerate(variables, start=1):
+        if isinstance(var_config, str):
+            data_source_name = var_config
+            var_name = var_config
+        elif isinstance(var_config, dict) and var_config.get("dataSource") is not None:
+            data_source_name = var_config["dataSource"]
+            var_name = var_config["name"]
+        else:
+            raise ValueError(f"Variable {idx} is not configure correctly")
+        data_source = _config["dataSources"].get(data_source_name)
         if data_source is None:
             raise ValueError(f"Data source for {var_name} does not exist")
         data_source_value = data_source["value"]
         match data_source["type"]:
             case "list":
-                var_list_selector = var_config.get("selector")
-                if var_list_selector is None or var_list_selector not in _datasource_list_selectors:
+                var_list_selector = var_config.get("selector", "any")
+                if var_list_selector not in _datasource_list_selectors:
                     raise ValueError(f"Variable {var_name} uses an invalid list selector")
                 variables_expanded[var_name] = expand_list_variable(var_list_selector, data_source_value)
             case "random":
-                rand_range = data_source.get("range")
+                rand_range = data_source["range"]
                 if data_source_value == "int":
                     variables_expanded[var_name] = randrange(
                         rand_range.get("from"),
@@ -89,6 +96,7 @@ def expand_variables(variables: dict) -> dict:
             case "env" | "gce-metadata":
                 variables_expanded[var_name] = data_source["__value__"]
 
+    debug_log("Returning expanded variables", variables_expanded)
     return variables_expanded
 
 

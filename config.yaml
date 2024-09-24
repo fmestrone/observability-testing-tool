@@ -27,7 +27,7 @@ dataSources:
     range: "10.0 ~ 99.0"
 
 loggingJobs:
-  - live: True
+  - live: true
     endOffset: "1h"
     frequency: "10s ~ 50s"
     textPayload: "hello from python log generator in project {project} from {ipAddress}"
@@ -43,9 +43,9 @@ loggingJobs:
       http_request:
         requestUrl: "localhost"
     variables:
-      project:
+      - name: "project"
         dataSource: "someEnvValue"
-      ipAddress:
+      - name: "ipAddress"
         dataSource: "someIpAddresses"
         selector: "any"
   - startTime: "2024-09-24 15:30"
@@ -69,9 +69,9 @@ loggingJobs:
       http_request:
         requestUrl: "localhost"
     variables:
-      prj:
+      - name: "prj"
         dataSource: "someEnvValue"
-      ip:
+      - name: "ip"
         dataSource: "someIpAddresses"
         selector: "any"
   - startTime: "2024-09-24 15:30"
@@ -95,9 +95,9 @@ loggingJobs:
       http_request:
         requestUrl: "localhost"
     variables:
-      prj:
+      - name: "prj"
         dataSource: "someEnvValue"
-      ip:
+      - name: "ip"
         dataSource: "someIpAddresses"
         selector: "any"
 
@@ -133,5 +133,8 @@ monitoringJobs:
       zone: "us-central1-f"
     metricValue: "{inst1_cpu_usage}"
     variables:
-      inst1_cpu_usage:
+      - name: "inst1_cpu_usage"
         dataSource: "cpuUsageValue"
+      - name: "ip"
+        dataSource: "someIpAddresses"
+        selector: "any"

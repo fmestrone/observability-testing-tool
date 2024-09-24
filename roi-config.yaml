@@ -32,8 +32,8 @@ dataSources:
     range: "10.0~99.0"
 
 loggingJobs:
-  - startTime: "18/09/2024T16:45:00.00000"
-    endTime: "18/09/2024T19:45:00.00000"
+  - startTime: "2024-09-24T16:45:00.00000"
+    endTime: "2024-09-24T19:45:00.00000"
     frequency: "45s~1m30s"
     textPayload: "Invalid connection request from {ip}"
     level: WARNING
@@ -48,13 +48,11 @@ loggingJobs:
       http_request:
         requestUrl: "localhost"
     variables:
-      vmId:
-        dataSource: "vmId"
-      vmZone:
-        dataSource: "vmZone"
-      activity:
+      - "vmId"
+      - "vmZone"
+      - name: "activity"
         dataSource: "cpuUsageValue"
-      ip:
+      - name: "ip"
         dataSource: "someIpAddresses"
         selector: "any"
 
@@ -75,14 +73,13 @@ metricDescriptors:
     monitoredResourceTypes:
       - "gce_instance"
     variables:
-      vmProjectId:
-        dataSource: "vmProjectId"
+      - "vmProjectId"
 
 monitoringJobs:
   - live: false
-    startTime: "18/09/2024T16:45:09.00000"
+    startTime: "20240924T16:45:09.00000"
     startOffset: "5m"
-    endTime: "18/09/2024T17:45:09.00000"
+    endTime: "20240924T17:45:09.00000"
     endOffset: "1h"
     frequency: "15s"
     metricType: "advobv/queries/python_app_count"
@@ -92,17 +89,13 @@ monitoringJobs:
     resourceLabels:
       instance_id: "{vmId}"
       zone: "{vmZone}"
-    metricValue: "{inst1_cpu_usage}"
+    metricValue: "{cpuUsageValue}"
     projectId: "{vmProjectId}"
     variables:
-      inst1_cpu_usage:
-        dataSource: "cpuUsageValue"
-      ip:
+      - "cpuUsageValue"
+      - name: "ip"
         dataSource: "someIpAddresses"
         selector: "any"
-      vmProjectId:
-        dataSource: "vmProjectId"
-      vmId:
-        dataSource: "vmId"
-      vmZone:
-        dataSource: "vmZone"
+      - "vmProjectId"
+      - "vmId"
+      - "vmZone"
