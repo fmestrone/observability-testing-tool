@@ -19,7 +19,7 @@ def info_log(message: str, object: any = None, exception: Exception = None, leve
 
     print(f"{log_header} {message}")
     if object is not None:
-        print(f"{log_header} ", object)
+        print(f"{log_header} ", object, sep="| ")
     if exception is not None:
-        print(f"{log_header} ", "".join(format_exception(exception, limit=None, chain=True)))
+        print(f"{log_header} ", "".join(format_exception(exception, limit=None, chain=True)), sep="| ")
     print()

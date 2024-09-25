@@ -7,7 +7,12 @@ import datetime
 from os import getenv
 
 
-client = monitoring_v3.MetricServiceClient()
+monitoringClient = None
+
+
+def setup_monitoring_client():
+    global monitoringClient
+    monitoringClient = monitoring_v3.MetricServiceClient()
 
 
 def prepare_time_interval_gauge(start_time = None):
@@ -62,7 +67,7 @@ def submit_metric(value: float, metric_type, interval, project_id = None, metric
 
     # Submit the time series data
     project_name = f"projects/{project_id if project_id is not None else getenv('GOOGLE_CLOUD_PROJECT')}"
-    client.create_time_series(request={"name": project_name, "time_series": [series]})
+    monitoringClient.create_time_series(request={"name": project_name, "time_series": [series]})
 
 
 def submit_metric_descriptor(type, kind, value_type, name = None, project_id = None, unit = None, description = None, display_name = None, launch_stage = None, labels = None, monitored_resource_types = None):
@@ -91,6 +96,6 @@ def submit_metric_descriptor(type, kind, value_type, name = None, project_id = N
 
     project_name = f"projects/{project_id if project_id is not None else getenv('GOOGLE_CLOUD_PROJECT')}"
 
-    client.create_metric_descriptor(
+    monitoringClient.create_metric_descriptor(
         name=project_name, metric_descriptor=descriptor
     )

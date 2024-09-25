@@ -9,3 +9,9 @@
 
 ### Start-up Script
 
+#### Environment Variables
+
+`ADVOBS_DEBUG=True` enables more detailed logging to stdout
+`ADVOBS_NO_GCE_METADATA=True` disables execution of GCE metadata endpoint when outside of a GCE VM instance
+`ADVOBS_DRY_RUN=True` executes the whole script without sending requests to Google Cloud, but logging to stdout instead
+

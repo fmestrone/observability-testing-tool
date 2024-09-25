@@ -1,4 +1,5 @@
 import random
+import re
 import sched
 import sys
 from multiprocessing import Process
@@ -9,38 +10,43 @@ from os import environ
 from random import randrange
 from time import sleep, time
 
-from config.common import debug_log
+from config.common import debug_log, info_log
 from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
-if len(sys.argv) == 2:
-    filename = sys.argv[1]
-else:
-    filename = None
+from obs.cloud_logging import setup_logging_client, submit_log_entry_text, submit_log_entry_json
+from obs.cloud_monitoring import setup_monitoring_client, submit_gauge_metric, submit_metric_descriptor
 
-_config = {}
-try:
-    _config = parse_config(filename)
-    if _config is None:
-        debug_log("No config information was found. Is the file empty?")
-        exit(1)
-    prepare_config(_config)
-except Exception as e:
-    debug_log("There was an error parsing the configuration file", _config, e)
-    exit(1)
-
-
-if _config.get("cloudConfig") is not None:
-    environ["GOOGLE_CLOUD_PROJECT"] = _config["cloudConfig"]["project"]
-    environ["GOOGLE_APPLICATION_CREDENTIALS"] = _config["cloudConfig"]["credentials"]
-
-# these imports need to happen AFTER the environment variables have been set
-
-from obs.cloud_logging import submit_log_entry_text, submit_log_entry_json
-from obs.cloud_monitoring import submit_gauge_metric, submit_metric_descriptor
-
-debug_log("Final configuration settings", _config)
 
 _datasource_list_selectors = ["any", "first", "last", "all"]
+
+_config = {}
+
+
+def prepare():
+    global _config
+    if len(sys.argv) == 2:
+        filename = sys.argv[1]
+    else:
+        filename = None
+    try:
+        _config = parse_config(filename)
+        if _config is None:
+            info_log("No config information was found. Is the file empty?")
+            exit(1)
+        prepare_config(_config)
+    except Exception as e:
+        info_log("There was an error parsing the configuration file", _config, e)
+        exit(1)
+
+    if _config.get("cloudConfig") is not None:
+        environ["GOOGLE_CLOUD_PROJECT"] = _config["cloudConfig"]["project"]
+        environ["GOOGLE_APPLICATION_CREDENTIALS"] = _config["cloudConfig"]["credentials"]
+
+    # these calls need to happen AFTER the environment variables have been set
+    setup_logging_client()
+    setup_monitoring_client()
+
+    debug_log("Final configuration settings", _config)
 
 
 def expand_list_variable(selector, value):
@@ -58,27 +64,29 @@ def expand_list_variable(selector, value):
         return None
 
 
-def expand_variables(variables: list) -> dict:
+# need the data sources for testability
+def expand_variables(variables: list, data_sources: dict) -> dict:
     debug_log("Received request to expand variables", variables)
     variables_expanded = {}
     for idx, var_config in enumerate(variables, start=1):
         if isinstance(var_config, str):
             data_source_name = var_config
             var_name = var_config
-        elif isinstance(var_config, dict) and var_config.get("dataSource") is not None:
-            data_source_name = var_config["dataSource"]
+        elif isinstance(var_config, dict):
             var_name = var_config["name"]
+            data_source_name = var_config.get("dataSource", var_name)
         else:
             raise ValueError(f"Variable {idx} is not configure correctly")
-        data_source = _config["dataSources"].get(data_source_name)
+        data_source = data_sources.get(data_source_name)
         if data_source is None:
-            raise ValueError(f"Data source for {var_name} does not exist")
+            raise ValueError(f"Data source for '{var_name}' does not exist")
+
         data_source_value = data_source["value"]
         match data_source["type"]:
             case "list":
                 var_list_selector = var_config.get("selector", "any")
                 if var_list_selector not in _datasource_list_selectors:
-                    raise ValueError(f"Variable {var_name} uses an invalid list selector")
+                    raise ValueError(f"Variable '{var_name}' uses an invalid list selector '{var_list_selector}'")
                 variables_expanded[var_name] = expand_list_variable(var_list_selector, data_source_value)
             case "random":
                 rand_range = data_source["range"]
@@ -95,6 +103,18 @@ def expand_variables(variables: list) -> dict:
                     )
             case "env" | "gce-metadata":
                 variables_expanded[var_name] = data_source["__value__"]
+            case "fixed":
+                # This type is mostly needed for testing and debugging
+                variables_expanded[var_name] = data_source["value"]
+
+        if var_config.get("extractor") is not None:
+            expanded_value = variables_expanded[var_name]
+            if not isinstance(expanded_value, str):
+                expanded_value = str(expanded_value)
+            matches = re.search(var_config["extractor"], expanded_value)
+            if matches is None or matches.group(1) is None:
+                raise ValueError(f"Could not extract from '{expanded_value}' in variable '{var_name}' - did you include a group in the regex?")
+            variables_expanded[var_name] = matches.group(1)
 
     debug_log("Returning expanded variables", variables_expanded)
     return variables_expanded
@@ -157,7 +177,7 @@ def _handle_live_job(job_key: str, schedule: sched.scheduler, job: dict, handler
     debug_log(f"{job_key}: Running scheduled job", job)
     if datetime.now() >= job["endTime"]: return
     if job.get("variables") is not None:
-        vars_dict = expand_variables(job["variables"])
+        vars_dict = expand_variables(job["variables"], _config["dataSources"])
     else:
         vars_dict = None
     handler(job_key, datetime.now(), job, vars_dict)
@@ -177,7 +197,7 @@ def _run_batch_jobs(jobs_key: str, handler: Callable):
         while submit_time < end_time:
             sleep(0.05) # avoid exceeding burn rate of API
             if job.get("variables") is not None:
-                vars_dict = expand_variables(job["variables"])
+                vars_dict = expand_variables(job["variables"], _config["dataSources"])
             else:
                 vars_dict = None
 
@@ -233,7 +253,7 @@ def create_metrics_descriptors():
 
         project_id = metric_descriptor.get("projectId")
         if metric_descriptor.get("variables") is not None:
-            vars_dict = expand_variables(metric_descriptor["variables"])
+            vars_dict = expand_variables(metric_descriptor["variables"], _config["dataSources"])
         else:
             vars_dict = None
         if vars_dict is not None:

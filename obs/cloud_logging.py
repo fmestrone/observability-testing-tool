@@ -7,8 +7,12 @@ from logging import getLevelName
 
 from google.cloud.logging_v2 import Resource
 
-client = google.cloud.logging.Client()
-client.setup_logging(log_level=logging.DEBUG)
+loggingClient = None
+
+def setup_logging_client():
+    global loggingClient
+    loggingClient = google.cloud.logging.Client()
+    loggingClient.setup_logging(log_level=logging.DEBUG)
 
 
 class TimestampFilter(logging.Filter):

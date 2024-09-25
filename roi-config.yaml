@@ -98,4 +98,5 @@ monitoringJobs:
         selector: "any"
       - "vmProjectId"
       - "vmId"
-      - "vmZone"
+      - name: "vmZone"
+        extractor: "/zones/([a-z0-9\-]+)$"
