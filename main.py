@@ -1,11 +1,10 @@
-import config.executor # keep this import! it loads the configuration
-
 from config.common import debug_log
 
-from config.executor import run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
+from config.executor import run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs, prepare
 
 
 def main():
+    prepare()
     p1 = run_logging_jobs()
     debug_log("Done with logging tasks. Now proceeding with monitoring tasks...")
     create_metrics_descriptors()

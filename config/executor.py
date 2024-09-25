@@ -137,9 +137,10 @@ def format_dict_payload(vars_dict: dict, obj: dict):
 
 
 def run_logging_jobs() -> Process:
+    global _config
     # https://docs.python.org/3/library/multiprocessing.html
     if _config["hasLiveLoggingJobs"]:
-        p = Process(target=_run_live_jobs, args=("loggingJobs", handle_logging_job))
+        p = Process(target=_run_live_jobs, args=("loggingJobs", handle_logging_job, _config))
         p.start()
     else:
         p = None
@@ -148,42 +149,43 @@ def run_logging_jobs() -> Process:
 
 
 def run_monitoring_jobs() -> Process:
+    global _config
     # https://docs.python.org/3/library/multiprocessing.html
     # https://docs.python.org/3/library/multiprocessing.html
     if _config["hasLiveMonitoringJobs"]:
-        p = Process(target=_run_live_jobs, args=("monitoringJobs", handle_monitoring_job))
+        p = Process(target=_run_live_jobs, args=("monitoringJobs", handle_monitoring_job, _config))
         p.start()
     else:
         p = None
     _run_batch_jobs("monitoringJobs", handle_monitoring_job)
     return p
 
-def _run_live_jobs(jobs_key: str, handler: Callable):
+def _run_live_jobs(jobs_key: str, handler: Callable, config: dict):
     schedule = sched.scheduler(time, sleep)
-    for idx, job in enumerate(_config[jobs_key], start=1):
+    for idx, job in enumerate(config[jobs_key], start=1):
         if not job["live"]: continue
         job_key = f"LiveJob [{jobs_key}/{idx}]"
         debug_log(f"{job_key}: Queuing into scheduler", job)
         if job["startTime"] > datetime.now():
-            schedule.enter(0, 1, _handle_live_job, (job_key, schedule, job, handler))
+            schedule.enter(0, 1, _handle_live_job, (job_key, schedule, job, config["dataSources"], handler))
         else:
-            schedule.enterabs(job["startTime"].timestamp(), 1, _handle_live_job, (job_key, schedule, job, handler))
+            schedule.enterabs(job["startTime"].timestamp(), 1, _handle_live_job, (job_key, schedule, job, config["dataSources"], handler))
     schedule.run(True)
     debug_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
     exit(0)
 
 
-def _handle_live_job(job_key: str, schedule: sched.scheduler, job: dict, handler: Callable):
+def _handle_live_job(job_key: str, schedule: sched.scheduler, job: dict, data_sources: dict, handler: Callable):
     debug_log(f"{job_key}: Running scheduled job", job)
     if datetime.now() >= job["endTime"]: return
     if job.get("variables") is not None:
-        vars_dict = expand_variables(job["variables"], _config["dataSources"])
+        vars_dict = expand_variables(job["variables"], data_sources)
     else:
         vars_dict = None
     handler(job_key, datetime.now(), job, vars_dict)
     next_time = next_timedelta_from_interval(job["frequency"])
     debug_log(f"{job_key}: Next Execution for in {next_time}")
-    schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (job_key, schedule, job, handler))
+    schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (job_key, schedule, job, data_sources, handler))
 
 
 def _run_batch_jobs(jobs_key: str, handler: Callable):
