@@ -1,5 +1,6 @@
 import logging
 import json
+from os import getenv
 
 import google.cloud.logging
 
@@ -7,9 +8,12 @@ from logging import getLevelName
 
 from google.cloud.logging_v2 import Resource
 
+__ADVOBS_DRY_RUN = (getenv("ADVOBS_DRY_RUN") == "True")
+
 loggingClient = None
 
 def setup_logging_client():
+    if __ADVOBS_DRY_RUN: return
     global loggingClient
     loggingClient = google.cloud.logging.Client()
     loggingClient.setup_logging(log_level=logging.DEBUG)

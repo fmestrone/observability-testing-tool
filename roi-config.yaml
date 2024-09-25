@@ -99,4 +99,4 @@ monitoringJobs:
       - "vmProjectId"
       - "vmId"
       - name: "vmZone"
-        extractor: "/zones/([a-z0-9\-]+)$"
+        extractor: "/zones/([a-z0-9\\-]+)$"

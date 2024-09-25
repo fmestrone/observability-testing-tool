@@ -6,10 +6,15 @@ __ADVOBS_DEBUG = (getenv("ADVOBS_DEBUG") == "True")
 
 def debug_log(message: str, object: any = None, exception: Exception = None):
     if __ADVOBS_DEBUG:
-        info_log(message, object, exception, level="D")
+        error_log(message, object, exception, level="D")
 
 
-def info_log(message: str, object: any = None, exception: Exception = None, level: str = "I"):
+def info_log(message: str, object: any = None, exception: Exception = None):
+    if __ADVOBS_DEBUG:
+        error_log(message, object, exception, level="I")
+
+
+def error_log(message: str, object: any = None, exception: Exception = None, level: str = "E"):
 
     from datetime import datetime
     from os import getpid

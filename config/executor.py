@@ -10,7 +10,7 @@ from os import environ
 from random import randrange
 from time import sleep, time
 
-from config.common import debug_log, info_log
+from config.common import debug_log, info_log, error_log
 from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
 from obs.cloud_logging import setup_logging_client, submit_log_entry_text, submit_log_entry_json
@@ -72,6 +72,7 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
         if isinstance(var_config, str):
             data_source_name = var_config
             var_name = var_config
+            var_config = {} # so it does not fail when looking up the config further down, e.g. var_config.get("extractor")
         elif isinstance(var_config, dict):
             var_name = var_config["name"]
             data_source_name = var_config.get("dataSource", var_name)
@@ -107,14 +108,16 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
                 # This type is mostly needed for testing and debugging
                 variables_expanded[var_name] = data_source["value"]
 
-        if var_config.get("extractor") is not None:
+        var_extractor = var_config.get("extractor")
+        if var_extractor is not None:
             expanded_value = variables_expanded[var_name]
             if not isinstance(expanded_value, str):
                 expanded_value = str(expanded_value)
-            matches = re.search(var_config["extractor"], expanded_value)
+            matches = re.search(var_extractor, expanded_value)
             if matches is None or matches.group(1) is None:
-                raise ValueError(f"Could not extract from '{expanded_value}' in variable '{var_name}' - did you include a group in the regex?")
-            variables_expanded[var_name] = matches.group(1)
+                error_log(f"Could not extract from '{expanded_value}' in variable '{var_name}' with regex '{var_extractor}'", "Did you include a group in the regex?")
+            else:
+                variables_expanded[var_name] = matches.group(1)
 
     debug_log("Returning expanded variables", variables_expanded)
     return variables_expanded
