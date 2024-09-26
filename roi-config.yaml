@@ -48,7 +48,8 @@ loggingJobs:
         requestUrl: "localhost"
     variables:
       - "vmId"
-      - "vmZone"
+      - name: "vmZone"
+        extractor: "/zones/([a-z0-9\\-]+)$"
       - name: "activity"
         dataSource: "cpuUsageValue"
       - name: "ip"
