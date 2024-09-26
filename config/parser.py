@@ -13,7 +13,7 @@ __ADVOBS_NO_GCE_METADATA = (getenv("ADVOBS_NO_GCE_METADATA") == "True")
 
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
-_datasource_types = ["env", "list", "random", "gce-metadata"]
+_datasource_types = ["env", "list", "random", "gce-metadata", "fixed"]
 _datasource_random_values = ["int", "float"]
 
 
@@ -151,6 +151,8 @@ def prepare_config(config: dict):
         config["dataSources"] = []
     if config.get("loggingJobs") is None:
         config["loggingJobs"] = []
+    if config.get("metricDescriptors") is None:
+        config["metricDescriptors"] = []
     if config.get("monitoringJobs") is None:
         config["monitoringJobs"] = []
 

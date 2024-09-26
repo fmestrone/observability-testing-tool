@@ -13,6 +13,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_no_frequency(self):
         config = {
+            "live": False,
             "startTime": "2024-10-9 10:00",
             "endTime": "2024-10-9 15:00",
         }
@@ -22,6 +23,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_no_offset_with_same_start_end_1(self):
         config = {
+            "live": False,
             "frequency": "30s"
         }
         with self.assertRaises(ValueError):
@@ -30,6 +32,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_no_offset_with_same_start_end_2(self):
         config = {
+            "live": False,
             "frequency": "30s",
             "startTime": "2024-10-9 15:00",
             "endTime": "2024-10-9 15:00"
@@ -40,6 +43,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_same_start_end_with_offset(self):
         config = {
+            "live": False,
             "frequency": "3.5m",
             "endOffset": "7h"
         }
@@ -54,6 +58,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_defaults_1(self):
         config: dict[str, any] = {
+            "live": False,
             "frequency": "30s",
             "startTime": "2024-10-09 15:00",
             "endOffset": "5m"
@@ -70,6 +75,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_defaults_2(self):
         config: dict[str, any] = {
+            "live": False,
             "frequency": "13m",
             "endTime": "2024-10-09 15:00",
             "startOffset": "-90s"
@@ -86,6 +92,7 @@ class JobTimingsTests(unittest.TestCase):
 
     def test_defaults_3(self):
         config = {
+            "live": False,
             "frequency": "1h~2h",
             "startTime": "2024-10-09 15:00",
             "endTime": "2024-10-12 15:00",
@@ -105,6 +112,25 @@ class JobTimingsTests(unittest.TestCase):
         })
         self.assertIn("startTime", config)
         self.assertNotIn("endOffset", config)
+
+    def test_back_from_now(self):
+        config = {
+            "live": False,
+            "frequency": "1h~2h",
+            "startOffset": "-24h"
+        }
+        configure_job_timings(config)
+        self.assertAlmostEqual((datetime.now() - timedelta(hours=24)).timestamp(), config["startTime"].timestamp(), places=3)
+
+
+    def test_forward_from_now(self):
+        config = {
+            "live": False,
+            "frequency": "1h~2h",
+            "endOffset": "5h"
+        }
+        configure_job_timings(config)
+        self.assertAlmostEqual((datetime.now() + timedelta(hours=5)).timestamp(), config["endTime"].timestamp(), places=3)
 
 
 if __name__ == '__main__':
