@@ -1,6 +1,6 @@
 import unittest
 
-from config.executor import expand_variables
+from config.executor import expand_variables, format_str_payload
 
 
 class VariableExpandTests(unittest.TestCase):
@@ -80,6 +80,32 @@ class VariableExpandTests(unittest.TestCase):
         result = expand_variables(variables, dataSources)
         self.assertEqual("a2", result["v21"])
         self.assertEqual("c3", result["v32"])
+
+
+    def test_indexed_var_dict(self):
+        dataSources = {
+            "logMessages": {
+                "type": "fixed",
+                "value": {"v1": "a1", "v2": "a2", "v3": "a3"}
+            }
+        }
+        variables = [ "logMessages" ]
+        vars_dict = expand_variables(variables, dataSources)
+        result = format_str_payload(vars_dict, "Value {logMessages[v1]}")
+        self.assertEqual("Value a1", result)
+
+
+    def test_indexed_var_list(self):
+        dataSources = {
+            "logMessages": {
+                "type": "fixed",
+                "value": ["a1", "a2", "a3"]
+            }
+        }
+        variables = [ "logMessages" ]
+        vars_dict = expand_variables(variables, dataSources)
+        result = format_str_payload(vars_dict, "Value {logMessages[2]}")
+        self.assertEqual("Value a3", result)
 
 
 if __name__ == '__main__':

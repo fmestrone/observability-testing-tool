@@ -182,8 +182,12 @@ def get_gce_metadata(metadata_key: str) -> str:
 def configure_logging_job(logging_job: dict):
     logging_job["live"] = isinstance(logging_job.get("live"), bool) and logging_job["live"] == True
 
+    if logging_job.get("loggingEntries") is None:
+        logging_job["loggingEntries"] = [{}]
+
     if logging_job.get("textPayload") is None and logging_job.get("jsonPayload") is None and logging_job.get("protoPayload") is None:
         raise RuntimeError("Missing 'textPayload' or 'jsonPayload' or 'protoPayload' in config")
+
     configure_job_timings(logging_job)
 
     return logging_job["live"]

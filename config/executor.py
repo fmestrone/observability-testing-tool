@@ -63,10 +63,15 @@ def expand_list_variable(selector, value):
     else:
         return None
 
-_regex_var_name_index = re.compile(r'^(?P<name>.+)\[(?P<index>.+?)\]?$')
+_regex_var_name_index = re.compile(r'^(?P<name>.+?)(\[(?P<index>.+)])?$')
 
 def _split_var_name_index(var_name):
-    pass
+    parts = _regex_var_name_index.match(var_name)
+    if parts is None:
+        return (var_name, None)
+    else:
+        return (parts.groupdict("name"), parts.groupdict("index"))
+
 
 # need the data sources for testability
 def expand_variables(variables: list, data_sources: dict) -> dict:
@@ -136,6 +141,11 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
 
 
 def format_str_payload(vars_dict: dict, text: str):
+    # TODO need to verify that text is valid
+    # - only {varname} or {varname[index]} syntax is allowed
+    # - varname must exist in vars_dict
+    # - for everything else, token is returned verbatim
+    # can use _split_var_name_index function to help
     return text.format(**vars_dict)
 
 
@@ -174,6 +184,7 @@ def run_monitoring_jobs() -> Process:
         p = None
     _run_batch_jobs("monitoringJobs", handle_monitoring_job)
     return p
+
 
 def _run_live_jobs(jobs_key: str, handler: Callable, config: dict):
     setup_logging_client()
