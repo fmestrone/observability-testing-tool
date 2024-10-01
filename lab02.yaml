@@ -84,5 +84,8 @@ loggingJobs:
         textPayload: "Looks like systems may be going down soon! Act Now!"
         level: "EMERGENCY"
       - frequency: "2h~4h"
+        textPayload: "{messages[1]} - Action: #{actionId} {messages[2]}"
+        level: "{messages[0]}"
+      - frequency: "2h~4h"
         textPayload: "{messages[1]} - Action: {messages[2]}"
         level: "{messages[0]}"

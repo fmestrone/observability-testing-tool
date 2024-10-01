@@ -10,8 +10,6 @@ from os import environ
 from random import randrange
 from time import sleep, time
 
-from requests import delete
-
 from config.common import debug_log, info_log, error_log
 from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
@@ -104,14 +102,14 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
                 rand_range = data_source["range"]
                 if data_source_value == "int":
                     variables_expanded[var_name] = randrange(
-                        rand_range.get("from"),
-                        rand_range.get("to"),
-                        rand_range.get("step")
+                        rand_range.get("from", 0),
+                        rand_range.get("to", 2147483647),
+                        rand_range.get("step", 1)
                     )
                 elif data_source_value == "float":
                     variables_expanded[var_name] = random.uniform(
-                        rand_range.get("from"),
-                        rand_range.get("to")
+                        rand_range.get("from", 0.0),
+                        rand_range.get("to", 2147483647.0),
                     )
             case "env" | "gce-metadata":
                 variables_expanded[var_name] = data_source["__value__"]
