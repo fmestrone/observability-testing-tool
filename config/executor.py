@@ -13,7 +13,7 @@ from time import sleep, time
 from config.common import debug_log, info_log, error_log
 from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
-from obs.cloud_logging import setup_logging_client, submit_log_entry_text, submit_log_entry_json
+from obs.cloud_logging import setup_logging_client, submit_log_entry, submit_log_entry_json, submit_log_entry_proto, logger
 from obs.cloud_monitoring import setup_monitoring_client, submit_gauge_metric, submit_metric_descriptor
 
 
@@ -63,6 +63,10 @@ def expand_list_variable(selector, value):
     else:
         return None
 
+_regex_var_name_index = re.compile(r'^(?P<name>.+)\[(?P<index>.+?)\]?$')
+
+def _split_var_name_index(var_name):
+    pass
 
 # need the data sources for testability
 def expand_variables(variables: list, data_sources: dict) -> dict:
@@ -108,6 +112,14 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
                 # This type is mostly needed for testing and debugging
                 variables_expanded[var_name] = data_source["value"]
 
+        var_index = var_config.get("index")
+        if var_index is not None:
+            expanded_value = variables_expanded[var_name]
+            if not isinstance(expanded_value, dict) and not isinstance(expanded_value, list):
+                error_log(f"Could not get indexed value from '{expanded_value}' in variable '{var_name}' with index '{var_index}'", "Make sure the value is a JSON object or array")
+            else:
+                variables_expanded[var_name] = expanded_value[var_index]
+
         var_extractor = var_config.get("extractor")
         if var_extractor is not None:
             expanded_value = variables_expanded[var_name]
@@ -152,7 +164,7 @@ def run_logging_jobs() -> Process:
 
 
 def run_monitoring_jobs() -> Process:
-    global _config
+    global _config, logger
     # https://docs.python.org/3/library/multiprocessing.html
     # https://docs.python.org/3/library/multiprocessing.html
     if _config["hasLiveMonitoringJobs"]:
@@ -164,6 +176,7 @@ def run_monitoring_jobs() -> Process:
     return p
 
 def _run_live_jobs(jobs_key: str, handler: Callable, config: dict):
+    setup_logging_client()
     schedule = sched.scheduler(time, sleep)
     for idx, job in enumerate(config[jobs_key], start=1):
         if not job["live"]: continue
@@ -215,6 +228,7 @@ def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict
     labels = job.get("labels")
     resource_labels = job.get("resourceLabels")
     other = job.get("other")
+    severity = job.get("level")
     if vars_dict is not None:
         if labels is not None:
             labels = format_dict_payload(vars_dict, labels)
@@ -222,34 +236,38 @@ def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict
             resource_labels = format_dict_payload(vars_dict, resource_labels)
         if other is not None:
             other = format_dict_payload(vars_dict, other)
+        if severity is not None:
+            severity = format_str_payload(vars_dict, severity)
+
+    kw = {
+        "log_name": job.get("logName"),
+        "resource_type": job.get("resourceType"),
+        "resource_labels": resource_labels,
+        "labels": labels,
+        "other": other,
+        "when": submit_time
+    }
 
     if job.get("jsonPayload") is not None:
         if vars_dict is None:
             json_payload = job["jsonPayload"]
         else:
             json_payload = format_dict_payload(vars_dict, job["jsonPayload"])
-        submit_log_entry_json(
-            job["level"], json_payload,
-            resource_type=job.get("resourceType"),
-            resource_labels=resource_labels,
-            labels=labels,
-            other=other,
-            when=submit_time.timestamp()
-        )
+        submit_log_entry_json(severity, json_payload, **kw)
 
     elif job.get("textPayload") is not None:
         if vars_dict is None:
             text_payload = job["textPayload"]
         else:
             text_payload = format_str_payload(vars_dict, job["textPayload"])
-        submit_log_entry_text(
-            job["level"], text_payload,
-            resource_type=job.get("resourceType"),
-            resource_labels=resource_labels,
-            labels=labels,
-            other=other,
-            when=submit_time.timestamp()
-        )
+        submit_log_entry(severity, text_payload, **kw)
+
+    elif job.get("protoPayload") is not None:
+        if vars_dict is None:
+            proto_payload = job["protoPayload"]
+        else:
+            proto_payload = format_dict_payload(vars_dict, job["protoPayload"])
+        submit_log_entry_proto(severity, proto_payload, **kw)
 
 
 def create_metrics_descriptors():

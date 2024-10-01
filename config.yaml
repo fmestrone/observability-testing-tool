@@ -48,8 +48,7 @@ loggingJobs:
       - name: "ipAddress"
         dataSource: "someIpAddresses"
         selector: "any"
-  - startTime: "2024-09-24 15:30"
-    endTime: "2024-09-24 18:30"
+  - startOffset: "-1h"
     frequency: "5s ~ 30s"
     jsonPayload:
       theMessage: "This is a cool logging message"
@@ -74,13 +73,13 @@ loggingJobs:
       - name: "ip"
         dataSource: "someIpAddresses"
         selector: "any"
-  - startTime: "2024-09-24 15:30"
-    endTime: "2024-09-24 19:30"
+  - startOffset: "-1h"
     frequency: "10s ~ 20s"
-    jsonPayload:
-      theMessage: "This is a cool logging message"
-      ipAddress: "{ip}"
-      project: "{prj}"
+    protoPayload:
+      "@type": "type.googleapis.com/google.appengine.logging.v1.RequestLog"
+      appEngineRelease: "1.9.71"
+      appId: "s~eduenko-suite"
+      endTime: "{prj}"
       otherStuff:
         novars: 1
     level: ERROR
@@ -119,10 +118,7 @@ metricDescriptors:
 
 monitoringJobs:
   - live: false
-    startTime: "2024-09-24 15:30"
-    startOffset: "5m"
-    endTime: "2024-09-24 18:30"
-    endOffset: "1h"
+    startOffset: "-1h"
     frequency: "15s"
     metricType: "advobv/queries/python_app_count"
     metricLabels:

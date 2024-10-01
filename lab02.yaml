@@ -1,0 +1,57 @@
+dataSources:
+  messages:
+    - ["ERROR", "Could not access Orders database"]
+    - ["INFO", "Executing order-create action"]
+    - ["INFO", "Executing order-discard action"]
+    - ["INFO", "Executing order-submit action"]
+    - ["INFO", "Executing order-submit action"]
+    - ["INFO", "Executing order-submit action"]
+    - ["WARN", "Database response time was slow (over 250ms)"]
+    - ["INFO", "Executing order-create action"]
+    - ["INFO", "Executing order-create action"]
+    - ["DEBUG", "Initializing app"]
+  actions:
+    - "order-create"
+    - "order-discard"
+    - "order-submit"
+  vmId:
+    type: "gce-metadata"
+    value: "instance/id"
+  vmZone:
+    type: "gce-metadata"
+    value: "instance/zone"
+  vmProjectId:
+    type: "gce-metadata"
+    value: "project/project-id"
+loggingJobs:
+  - startOffset: "-48h"
+    frequency: "45s~3m"
+    textPayload: "{text}"
+    level: "{severity}"
+    resourceType: "gce_instance"
+    resourceLabels:
+      instance_id: "{vmId}"
+      project_id: "{vmProjectId}"
+      zone: "{vmZone}"
+    labels:
+      clone_id: "007989f2a1a6d368442517b2456a05a96d74b9484a69422494429a24e3fbae0b702a98de27df5b1bff59cc927e59b4d28ee34f10e0c755f61d6b1dbbe3d9e994d8b94b790995ca4fe7ea80a2b85121"
+    other:
+      trace: "T01234-YXZ"
+      http_request:
+        requestUrl: "https://ecomm.app/action/{action}"
+    variables:
+      - name: "severity"
+        dataSource: "messages"
+        selector: "any"
+        index: 0
+      - name: "text"
+        dataSource: "messages"
+        selector: "any"
+        index: 1
+      - name: "action"
+        dataSource: "actions"
+        selector: "any"
+      - "vmProjectId"
+      - "vmId"
+      - name: "vmZone"
+        extractor: "/zones/([a-z0-9\\-]+)$"

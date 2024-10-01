@@ -41,12 +41,18 @@ You can use the following environment variables when running the tool
   - `live`
   - timings
   - `textPayload` or `jsonPayload`
+  - `level`
+    - one of `DEFAULT`, `DEBUG`, `INFO`, `NOTICE`, `WARNING`, `ERROR`, `CRITICAL`, `ALERT`, `EMERGENCY` 
+      for Cloud logging
+    - one of `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, `NOTSET` for native Python logging
+  - variables
 
 - `metricDescriptors`
 
 - `monitoringJobs`
   - `live`
   - timings
+  - variables
 
 
 Timing definitions are as follows
@@ -56,4 +62,12 @@ Timing definitions are as follows
 - `startOffset`
 - `endTime`
 - `endOffset`
+
+Variable definitions are a list of the following
+
+- `name`
+- `dataSource`
+- `selector`
+- `extractor`
+- `index`
 
