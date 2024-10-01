@@ -10,6 +10,8 @@ from os import environ
 from random import randrange
 from time import sleep, time
 
+from requests import delete
+
 from config.common import debug_log, info_log, error_log
 from config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
@@ -174,7 +176,7 @@ def run_logging_jobs() -> Process:
 
 
 def run_monitoring_jobs() -> Process:
-    global _config, logger
+    global _config
     # https://docs.python.org/3/library/multiprocessing.html
     # https://docs.python.org/3/library/multiprocessing.html
     if _config["hasLiveMonitoringJobs"]:
@@ -219,20 +221,25 @@ def _run_batch_jobs(jobs_key: str, handler: Callable):
     for idx, job in enumerate(_config[jobs_key], start=1):
         if job["live"]: continue
         sleep(0.5)
-        job_key = f"BatchJob [{jobs_key}/{idx}]"
-        submit_time = job["startTime"]
-        end_time = job["endTime"]
-        frequency = job["frequency"]
-        while submit_time < end_time:
-            sleep(0.05) # avoid exceeding burn rate of API
-            if job.get("variables") is not None:
-                vars_dict = expand_variables(job["variables"], _config["dataSources"])
-            else:
-                vars_dict = None
+        jobConfig = dict(job)
+        del jobConfig["loggingEntries"]
+        for entryIdx, entry in enumerate(job["loggingEntries"], start=1):
+            entry = jobConfig | entry
+            submit_time = entry["startTime"]
+            end_time = entry["endTime"]
+            frequency = entry["frequency"]
+            job_key = f"BatchJob [{jobs_key}/{idx}] #{entryIdx}"
+            info_log(f"{job_key}: Starting job from {submit_time} to {end_time} every {frequency}")
+            while submit_time < end_time:
+                sleep(0.05) # avoid exceeding burn rate of API
+                if entry.get("variables") is not None:
+                    vars_dict = expand_variables(entry["variables"], _config["dataSources"])
+                else:
+                    vars_dict = None
 
-            handler(job_key, submit_time, job, vars_dict)
+                handler(job_key, submit_time, entry, vars_dict)
 
-            submit_time += next_timedelta_from_interval(frequency)
+                submit_time += next_timedelta_from_interval(frequency)
 
 
 def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict: dict):
@@ -264,6 +271,7 @@ def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict
             json_payload = job["jsonPayload"]
         else:
             json_payload = format_dict_payload(vars_dict, job["jsonPayload"])
+        info_log(f"{job_key}: Sending log with JSON Payload", json_payload)
         submit_log_entry_json(severity, json_payload, **kw)
 
     elif job.get("textPayload") is not None:
@@ -271,6 +279,7 @@ def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict
             text_payload = job["textPayload"]
         else:
             text_payload = format_str_payload(vars_dict, job["textPayload"])
+        info_log(f"{job_key}: Sending log with text Payload", text_payload)
         submit_log_entry(severity, text_payload, **kw)
 
     elif job.get("protoPayload") is not None:
@@ -278,6 +287,7 @@ def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict
             proto_payload = job["protoPayload"]
         else:
             proto_payload = format_dict_payload(vars_dict, job["protoPayload"])
+        info_log(f"{job_key}: Sending log with ProtoBuf Payload", proto_payload)
         submit_log_entry_proto(severity, proto_payload, **kw)
 
 

@@ -4,11 +4,15 @@ dataSources:
     value:
       - ["ERROR", "Could not access Orders database", "connect"]
       - ["INFO", "Executing order-create action", "order-create"]
+      - ["INFO", "Executing order-create action", "order-create"]
       - ["INFO", "Executing order-discard action", "order-discard"]
+      - ["NOTICE", "Stock request to fulfill order-create action", "order-stock"]
       - ["INFO", "Executing order-submit action", "order-submit"]
       - ["INFO", "Executing order-submit action", "order-submit"]
       - ["INFO", "Executing order-submit action", "order-submit"]
       - ["WARNING", "Database response time was slow (over 250ms)", "connect"]
+      - ["INFO", "Executing order-create action", "order-create"]
+      - ["NOTICE", "Stock request to fulfill order-create action", "order-stock"]
       - ["INFO", "Executing order-create action", "order-create"]
       - ["INFO", "Executing order-create action", "order-create"]
       - ["DEBUG", "Initializing app", "init"]
@@ -21,16 +25,15 @@ dataSources:
   vmProjectId:
     type: "gce-metadata"
     value: "project/project-id"
+  actionId:
+    type: "random"
+    value: "int"
+    range: "32109 ~ 76543"
 
 loggingJobs:
 
-  - logName: "eshop-orders"
+  - logName: "test-shop"
     startOffset: "-48h"
-    frequency: "45s~3m"
-    jsonPayload:
-      message: "{messages[1]}"
-      action: "{messages[2]}"
-    level: "{messages[0]}"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -39,35 +42,26 @@ loggingJobs:
     variables:
       - name: "messages"
         selector: "any"
-      - name: "action"
-        dataSource: "actions"
-        selector: "any"
       - "vmProjectId"
       - "vmId"
       - name: "vmZone"
         extractor: "/zones/([a-z0-9\\-]+)$"
+      - "actionId"
+    loggingEntries:
+      - frequency: "90s~5m"
+        jsonPayload:
+          message: "{messages[1]}"
+          action: "{messages[2]}"
+        level: "{messages[0]}"
+      - frequency: "12h~52h"
+        textPayload: "Looks like systems may be going down soon! Act Now!"
+        level: "EMERGENCY"
+      - frequency: "3h~4h"
+        textPayload: "{messages[1]} - Action: #{actionId} {messages[2]}"
+        level: "{messages[0]}"
 
   - logName: "eshop-orders"
     startOffset: "-48h"
-    frequency: "20h~72h"
-    textPayload: "Looks like systems may be going down soon! Act Now!"
-    level: "EMERGENCY"
-    resourceType: "gce_instance"
-    resourceLabels:
-      instance_id: "{vmId}"
-      project_id: "{vmProjectId}"
-      zone: "{vmZone}"
-    variables:
-      - "vmProjectId"
-      - "vmId"
-      - name: "vmZone"
-        extractor: "/zones/([a-z0-9\\-]+)$"
-
-  - logName: "eshop-orders"
-    startOffset: "-48h"
-    frequency: "2h-4h"
-    textPayload: "{messages[1]} - Action: {messages[2]}"
-    level: "{messages[0]}"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -76,10 +70,19 @@ loggingJobs:
     variables:
       - name: "messages"
         selector: "any"
-      - name: "action"
-        dataSource: "actions"
-        selector: "any"
       - "vmProjectId"
       - "vmId"
       - name: "vmZone"
         extractor: "/zones/([a-z0-9\\-]+)$"
+    loggingEntries:
+      - frequency: "40s~3m"
+        jsonPayload:
+          message: "{messages[1]}"
+          action: "{messages[2]}"
+        level: "{messages[0]}"
+      - frequency: "20h~72h"
+        textPayload: "Looks like systems may be going down soon! Act Now!"
+        level: "EMERGENCY"
+      - frequency: "2h~4h"
+        textPayload: "{messages[1]} - Action: {messages[2]}"
+        level: "{messages[0]}"

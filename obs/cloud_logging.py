@@ -76,7 +76,8 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
         if when is not None:
             extra["logger__timestamp"] = when.timestamp()
 
-        logger.log(getLevelName(level), message, extra=extra)
+        if not __ADVOBS_DRY_RUN:
+            logger.log(getLevelName(level), message, extra=extra)
 
     else:
 
@@ -89,7 +90,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
 
         if log_name is None:
             log_name = "python"
-        if not _regex_logname_format.match(log_name):
+        if not __ADVOBS_DRY_RUN and not _regex_logname_format.match(log_name):
             log_name = f"projects/{logger.project}/logs/{log_name}"
 
         metadata = {
@@ -103,15 +104,16 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
             ),
             **other
         }
-        match payloadStyle:
-            case "json":
-                logger.log_struct(message, **metadata)
-            case "text":
-                logger.log_text(message, **metadata)
-            case "proto":
-                logger.log_proto(message, **metadata)
-            case _:
-                raise ValueError(f"Invalid payload type {payloadStyle}")
+        if not __ADVOBS_DRY_RUN:
+            match payloadStyle:
+                case "json":
+                    logger.log_struct(message, **metadata)
+                case "text":
+                    logger.log_text(message, **metadata)
+                case "proto":
+                    logger.log_proto(message, **metadata)
+                case _:
+                    raise ValueError(f"Invalid payload type {payloadStyle}")
 
 
 def submit_log_entry_json(level, payload, when = None, labels = None, resource_type = None, resource_labels = None, log_name = None, other = None):

@@ -1,16 +1,16 @@
 from os import getenv
 
 
-__ADVOBS_DEBUG = (getenv("ADVOBS_DEBUG") == "True")
+__ADVOBS_DEBUG = int(getenv("ADVOBS_DEBUG"))
 
 
 def debug_log(message: str, object: any = None, exception: Exception = None):
-    if __ADVOBS_DEBUG:
+    if __ADVOBS_DEBUG >= 2:
         error_log(message, object, exception, level="D")
 
 
 def info_log(message: str, object: any = None, exception: Exception = None):
-    if __ADVOBS_DEBUG:
+    if __ADVOBS_DEBUG >= 1:
         error_log(message, object, exception, level="I")
 
 

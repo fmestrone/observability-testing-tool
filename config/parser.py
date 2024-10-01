@@ -9,7 +9,7 @@ from datetime import datetime
 
 import requests
 
-__ADVOBS_NO_GCE_METADATA = (getenv("ADVOBS_NO_GCE_METADATA") == "True")
+__ADVOBS_NO_GCE_METADATA = (getenv("ADVOBS_NO_GCE_METADATA") == "True" or getenv("ADVOBS_DRY_RUN") == "True")
 
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
@@ -139,6 +139,51 @@ def configure_job_timings(job_config: dict):
         raise ValueError("End time of job must be later than start time")
 
 
+def configure_entry_timings(entry_config: dict, logging_job: dict):
+    current_timestamp = datetime.today() # create now so the default startTime is later than this point
+
+    entry_config["frequency"] = entry_config.get("frequency", logging_job.get("frequency"))
+
+    if entry_config.get("frequency") is None:
+        raise ValueError("Frequency must be specified either in the job config or in the entry config")
+
+    entry_config["frequency"] = parse_timedelta_interval(entry_config["frequency"])
+
+    entry_config["startTime"] = entry_config.get("startTime", logging_job.get("startTime"))
+    entry_config["endTime"] = entry_config.get("endTime", logging_job.get("endTime"))
+    entry_config["startOffset"] = entry_config.get("startOffset", logging_job.get("startOffset"))
+    entry_config["endOffset"] = entry_config.get("endOffset", logging_job.get("endOffset"))
+
+    if entry_config.get("startTime") is None and entry_config.get("endTime") is None:
+        entry_config["startTime"] = datetime.today()
+        entry_config["endTime"] = entry_config["startTime"]
+    elif entry_config.get("startTime") is None:
+        entry_config["endTime"] = parse_datetime(entry_config["endTime"])
+        entry_config["startTime"] = entry_config["endTime"]
+    elif entry_config.get("endTime") is None:
+        entry_config["startTime"] = parse_datetime(entry_config["startTime"])
+        entry_config["endTime"] = entry_config["startTime"]
+    else:
+        entry_config["startTime"] = parse_datetime(entry_config["startTime"])
+        entry_config["endTime"] = parse_datetime(entry_config["endTime"])
+
+    if entry_config.get("startOffset") is not None:
+        entry_config["originalStartTime"] = entry_config["startTime"]
+        entry_config["startOffset"] = parse_timedelta_interval(entry_config["startOffset"])
+        entry_config["startTime"] = entry_config["originalStartTime"] + next_timedelta_from_interval(entry_config["startOffset"])
+
+    if entry_config.get("endOffset") is not None:
+        entry_config["originalEndTime"] = entry_config["endTime"]
+        entry_config["endOffset"] = parse_timedelta_interval(entry_config["endOffset"])
+        entry_config["endTime"] = entry_config["originalEndTime"] + next_timedelta_from_interval(entry_config["endOffset"])
+
+    if logging_job["live"] and entry_config["startTime"] < current_timestamp:
+        raise ValueError("Live job must start now or later")
+
+    if entry_config["startTime"] >= entry_config["endTime"]:
+        raise ValueError("End time of job must be later than start time")
+
+
 def parse_config(file: str = None) -> dict:
     if file is None: file = "config.yaml" # makes it easier to pass None at point of call
     with open(file, 'r') as file:
@@ -185,10 +230,8 @@ def configure_logging_job(logging_job: dict):
     if logging_job.get("loggingEntries") is None:
         logging_job["loggingEntries"] = [{}]
 
-    if logging_job.get("textPayload") is None and logging_job.get("jsonPayload") is None and logging_job.get("protoPayload") is None:
-        raise RuntimeError("Missing 'textPayload' or 'jsonPayload' or 'protoPayload' in config")
-
-    configure_job_timings(logging_job)
+    for logging_entry in logging_job["loggingEntries"]:
+        configure_entry_timings(logging_entry, logging_job)
 
     return logging_job["live"]
 
