@@ -65,7 +65,7 @@ dataSources:
   actionId:
     type: "random"
     value: "int"
-    range: "32109 ~ 76543"
+    range: "32109 ~ 36543"
 
 loggingJobs:
 
