@@ -22,6 +22,11 @@ dataSources:
       - ["CRITICAL", "Too many denied attempts from"]
       - ["INFO", "Access succeeded from"]
       - ["WARNING", "Access succeeded from"]
+  logName:
+    type: "list"
+    value:
+      - "python"
+      - "eshop-test"
   ips:
     type: "list"
     value:
@@ -64,7 +69,7 @@ dataSources:
 
 loggingJobs:
 
-  - logName: "test-shop"
+  - logName: "{logName}"
     startOffset: "-48h"
     resourceType: "gce_instance"
     resourceLabels:
@@ -72,13 +77,14 @@ loggingJobs:
       project_id: "{vmProjectId}"
       zone: "{vmZone}"
     variables:
-      - name: "messages"
-        selector: "any"
       - "vmProjectId"
       - "vmId"
+      - "actionId"
+      - "logName"
+      - name: "messages"
+        selector: "any"
       - name: "vmZone"
         extractor: "/zones/([a-z0-9\\-]+)$"
-      - "actionId"
     loggingEntries:
       - frequency: "90s~5m"
         jsonPayload:
@@ -126,6 +132,8 @@ loggingJobs:
       - frequency: "2h~4h"
         textPayload: "{messages[1]} - Action: #{actionId} {messages[2]}"
         level: "{messages[0]}"
+        variables:
+          - "actionId"
       - frequency: "2h~4h"
         textPayload: "{messages[1]} - Action: {messages[2]}"
         level: "{messages[0]}"

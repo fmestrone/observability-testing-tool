@@ -220,12 +220,16 @@ def prepare_config(config: dict):
         configure_data_source(datasource)
 
     config["hasLiveLoggingJobs"] = False
-    for job in config["loggingJobs"]:
+    for job_id, job in enumerate(config["loggingJobs"], start=1):
+        temp_id = job.get("id", f"{job_id:03}")
+        job["id"] = f"log#{temp_id}"
         if configure_logging_job(job) and not config.get("hasLiveLoggingJobs"):
             config["hasLiveLoggingJobs"] = True
 
     config["hasLiveMonitoringJobs"] = False
-    for job in config["monitoringJobs"]:
+    for job_id, job in enumerate(config["monitoringJobs"], start=1):
+        temp_id = job.get("id", f"{job_id:03}")
+        job["id"] = f"mon#{temp_id}"
         if configure_monitoring_job(job) and not config.get("hasLiveLoggingJobs"):
             config["hasLiveMonitoringJobs"] = True
 
@@ -250,7 +254,9 @@ def configure_logging_job(logging_job: dict):
 
     logging_job_vars = {_get_variable_name(var): var for var in logging_job["variables"]}
 
-    for logging_entry in logging_job["loggingEntries"]:
+    for logging_entry_id, logging_entry in enumerate(logging_job["loggingEntries"], start=1):
+        temp_id = logging_entry.get("id", f"{logging_entry_id:03}")
+        logging_entry["id"] = f"{logging_job["id"]}/{temp_id}"
         configure_entry_timings(logging_entry, logging_job)
         configure_variables(logging_entry, logging_job_vars)
 

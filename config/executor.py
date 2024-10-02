@@ -139,6 +139,7 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
 
 
 def format_str_payload(vars_dict: dict, text: str):
+    if text is None: return None
     # TODO need to verify that text is valid
     # - only {varname} or {varname[index]} syntax is allowed
     # - varname must exist in vars_dict
@@ -148,6 +149,7 @@ def format_str_payload(vars_dict: dict, text: str):
 
 
 def format_dict_payload(vars_dict: dict, obj: dict):
+    if obj is None: return None
     new_payload = {}
     for key, value in obj.items():
         if isinstance(value, str):
@@ -187,45 +189,45 @@ def run_monitoring_jobs() -> Process:
 def _run_live_jobs(jobs_key: str, handler: Callable, config: dict):
     setup_logging_client()
     schedule = sched.scheduler(time, sleep)
-    for idx, job in enumerate(config[jobs_key], start=1):
+    for job in config[jobs_key]:
         if not job["live"]: continue
-        job_key = f"LiveJob [{jobs_key}/{idx}]"
+        job_key = f"LiveJob [{job['id']}]"
         debug_log(f"{job_key}: Queuing into scheduler", job)
         if job["startTime"] > datetime.now():
-            schedule.enter(0, 1, _handle_live_job, (job_key, schedule, job, config["dataSources"], handler))
+            schedule.enter(0, 1, _handle_live_job, (schedule, job, config["dataSources"], handler))
         else:
-            schedule.enterabs(job["startTime"].timestamp(), 1, _handle_live_job, (job_key, schedule, job, config["dataSources"], handler))
+            schedule.enterabs(job["startTime"].timestamp(), 1, _handle_live_job, (schedule, job, config["dataSources"], handler))
     schedule.run(True)
     debug_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
     exit(0)
 
 
-def _handle_live_job(job_key: str, schedule: sched.scheduler, job: dict, data_sources: dict, handler: Callable):
+def _handle_live_job(schedule: sched.scheduler, job: dict, data_sources: dict, handler: Callable):
+    job_key = job["id"]
     debug_log(f"{job_key}: Running scheduled job", job)
     if datetime.now() >= job["endTime"]: return
     if job.get("variables") is not None:
         vars_dict = expand_variables(job["variables"], data_sources)
     else:
         vars_dict = None
-    handler(job_key, datetime.now(), job, vars_dict)
+    handler(datetime.now(), job, vars_dict)
     next_time = next_timedelta_from_interval(job["frequency"])
     debug_log(f"{job_key}: Next Execution for in {next_time}")
-    schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (job_key, schedule, job, data_sources, handler))
+    schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (schedule, job, data_sources, handler))
 
 
 def _run_batch_jobs(jobs_key: str, handler: Callable):
-    for idx, job in enumerate(_config[jobs_key], start=1):
+    for job in _config[jobs_key]:
         if job["live"]: continue
         sleep(0.5)
         jobConfig = dict(job)
         del jobConfig["loggingEntries"]
-        for entryIdx, entry in enumerate(job["loggingEntries"], start=1):
+        for entry in job["loggingEntries"]:
             entry = jobConfig | entry
             submit_time = entry["startTime"]
             end_time = entry["endTime"]
             frequency = entry["frequency"]
-            job_key = f"BatchJob [{jobs_key}/{idx}] #{entryIdx}"
-            info_log(f"{job_key}: Starting job from {submit_time} to {end_time} every {frequency}")
+            info_log(f"{entry['id']}: Starting job from {submit_time} to {end_time} every {frequency}")
             while submit_time < end_time:
                 sleep(0.05) # avoid exceeding burn rate of API
                 if entry.get("variables") is not None:
@@ -233,29 +235,30 @@ def _run_batch_jobs(jobs_key: str, handler: Callable):
                 else:
                     vars_dict = None
 
-                handler(job_key, submit_time, entry, vars_dict)
+                handler(submit_time, entry, vars_dict)
 
                 submit_time += next_timedelta_from_interval(frequency)
 
 
-def handle_logging_job(job_key: str, submit_time: datetime, job: dict, vars_dict: dict):
+def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
+    job_key = job["id"]
     labels = job.get("labels")
+    resource_type = job.get("resourceType")
     resource_labels = job.get("resourceLabels")
     other = job.get("other")
     severity = job.get("level")
+    log_name = job.get("logName")
     if vars_dict is not None:
-        if labels is not None:
-            labels = format_dict_payload(vars_dict, labels)
-        if resource_labels is not None:
-            resource_labels = format_dict_payload(vars_dict, resource_labels)
-        if other is not None:
-            other = format_dict_payload(vars_dict, other)
-        if severity is not None:
-            severity = format_str_payload(vars_dict, severity)
+        labels = format_dict_payload(vars_dict, labels)
+        resource_type = format_str_payload(vars_dict, resource_type)
+        resource_labels = format_dict_payload(vars_dict, resource_labels)
+        other = format_dict_payload(vars_dict, other)
+        severity = format_str_payload(vars_dict, severity)
+        log_name = format_str_payload(vars_dict, log_name)
 
     kw = {
-        "log_name": job.get("logName"),
-        "resource_type": job.get("resourceType"),
+        "log_name": log_name,
+        "resource_type": resource_type,
         "resource_labels": resource_labels,
         "labels": labels,
         "other": other,
@@ -313,7 +316,7 @@ def create_metrics_descriptors():
         )
 
 
-def handle_monitoring_job(job_key: str, submit_time: datetime, job: dict, vars_dict: dict):
+def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
     metric_labels = job.get("metricLabels")
     resource_labels = job.get("resourceLabels")
     project_id = job.get("projectId")
@@ -321,12 +324,9 @@ def handle_monitoring_job(job_key: str, submit_time: datetime, job: dict, vars_d
         metric_value = float(job["metricValue"])
     else:
         metric_value = float(format_str_payload(vars_dict, job["metricValue"]))
-        if metric_labels is not None:
-            metric_labels = format_dict_payload(vars_dict, metric_labels)
-        if resource_labels is not None:
-            resource_labels = format_dict_payload(vars_dict, resource_labels)
-        if project_id is not None:
-            project_id = format_str_payload(vars_dict, project_id)
+        metric_labels = format_dict_payload(vars_dict, metric_labels)
+        resource_labels = format_dict_payload(vars_dict, resource_labels)
+        project_id = format_str_payload(vars_dict, project_id)
     submit_gauge_metric(
         metric_value, job["metricType"], submit_time,
         project_id=project_id,
