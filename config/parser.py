@@ -94,7 +94,7 @@ def parse_timedelta_value(duration_val: str) -> timedelta:
     """
     parts = _regex_duration.match(duration_val)
     if parts is None:
-        raise ValueError("Could not parse any duration information from '{}'.  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'".format(parts))
+        raise ValueError(f"Could not parse any duration information from '{duration_val}'.  Examples of valid strings: '8h', '2d8h5m20s', '2m4s'")
     time_params = {name: float(param) for name, param in parts.groupdict().items() if param}
     if parts.group(1) == "-":
         return -timedelta(**time_params)
@@ -184,6 +184,21 @@ def configure_entry_timings(entry_config: dict, logging_job: dict):
         raise ValueError("End time of job must be later than start time")
 
 
+def _get_variable_name(var_config: dict | str):
+    if isinstance(var_config, dict):
+        return var_config.get("name")
+    elif isinstance(var_config, str):
+        return var_config
+    else:
+        raise ValueError("Variable config must be dict or str")
+
+
+def configure_variables(entry: dict, logging_vars: dict):
+    entry_vars = {_get_variable_name(var): var for var in entry.get("variables", [])}
+    entry_vars.update(logging_vars)
+    entry["variables"] = [var for var in entry_vars.values()]
+
+
 def parse_config(file: str = None) -> dict:
     if file is None: file = "config.yaml" # makes it easier to pass None at point of call
     with open(file, 'r') as file:
@@ -230,8 +245,17 @@ def configure_logging_job(logging_job: dict):
     if logging_job.get("loggingEntries") is None:
         logging_job["loggingEntries"] = [{}]
 
+    if logging_job.get("variables") is None:
+        logging_job["variables"] = []
+
+    logging_job_vars = {_get_variable_name(var): var for var in logging_job["variables"]}
+
     for logging_entry in logging_job["loggingEntries"]:
         configure_entry_timings(logging_entry, logging_job)
+        configure_variables(logging_entry, logging_job_vars)
+
+    del logging_job["variables"]
+    del logging_job_vars
 
     return logging_job["live"]
 

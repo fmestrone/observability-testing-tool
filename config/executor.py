@@ -17,8 +17,6 @@ from obs.cloud_logging import setup_logging_client, submit_log_entry, submit_log
 from obs.cloud_monitoring import setup_monitoring_client, submit_gauge_metric, submit_metric_descriptor
 
 
-_datasource_list_selectors = ["any", "first", "last", "all"]
-
 _config = {}
 
 
@@ -57,11 +55,13 @@ def expand_list_variable(selector, value):
     elif selector == "last":
         return value[-1]
     elif selector == "all":
-        return " ".join(value)
-    elif isinstance(selector, int) and 0 < selector < len(value):
-        return value[selector]
+        return value
     else:
-        return None
+        try:
+            return value[int(selector)]
+        except ValueError:
+            # TODO allow range selection (sublist/slice)
+            raise ValueError(f"Variable '{value}' uses an invalid list selector '{selector}'")
 
 _regex_var_name_index = re.compile(r'^(?P<name>.+?)(\[(?P<index>.+)])?$')
 
@@ -95,8 +95,6 @@ def expand_variables(variables: list, data_sources: dict) -> dict:
         match data_source["type"]:
             case "list":
                 var_list_selector = var_config.get("selector", "any")
-                if var_list_selector not in _datasource_list_selectors:
-                    raise ValueError(f"Variable '{var_name}' uses an invalid list selector '{var_list_selector}'")
                 variables_expanded[var_name] = expand_list_variable(var_list_selector, data_source_value)
             case "random":
                 rand_range = data_source["range"]
