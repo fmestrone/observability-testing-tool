@@ -101,46 +101,13 @@ def parse_timedelta_value(duration_val: str) -> timedelta:
     else:
         return timedelta(**time_params)
 
+
 def parse_datetime(datetime_str: str) -> datetime:
     return datetime.fromisoformat(datetime_str)
 
-def configure_job_timings(job_config: dict):
-    current_timestamp = datetime.today() # create now so the default startTime is later than this point
-
-    job_config["frequency"] = parse_timedelta_interval(job_config["frequency"])
-
-    if job_config.get("startTime") is None and job_config.get("endTime") is None:
-        job_config["startTime"] = datetime.today()
-        job_config["endTime"] = job_config["startTime"]
-    elif job_config.get("startTime") is None:
-        job_config["endTime"] = parse_datetime(job_config["endTime"])
-        job_config["startTime"] = job_config["endTime"]
-    elif job_config.get("endTime") is None:
-        job_config["startTime"] = parse_datetime(job_config["startTime"])
-        job_config["endTime"] = job_config["startTime"]
-    else:
-        job_config["startTime"] = parse_datetime(job_config["startTime"])
-        job_config["endTime"] = parse_datetime(job_config["endTime"])
-
-    if job_config.get("startOffset") is not None:
-        job_config["originalStartTime"] = job_config["startTime"]
-        job_config["startOffset"] = parse_timedelta_interval(job_config["startOffset"])
-        job_config["startTime"] = job_config["originalStartTime"] + next_timedelta_from_interval(job_config["startOffset"])
-
-    if job_config.get("endOffset") is not None:
-        job_config["originalEndTime"] = job_config["endTime"]
-        job_config["endOffset"] = parse_timedelta_interval(job_config["endOffset"])
-        job_config["endTime"] = job_config["originalEndTime"] + next_timedelta_from_interval(job_config["endOffset"])
-
-    if job_config["live"] and job_config["startTime"] < current_timestamp:
-        raise ValueError("Live job must start now or later")
-
-    if job_config["startTime"] >= job_config["endTime"]:
-        raise ValueError("End time of job must be later than start time")
-
 
 def configure_entry_timings(entry_config: dict, logging_job: dict):
-    current_timestamp = datetime.today() # create now so the default startTime is later than this point
+    current_timestamp = datetime.now() # create now so the default startTime is later than this point
 
     entry_config["frequency"] = entry_config.get("frequency", logging_job.get("frequency"))
 
@@ -153,7 +120,7 @@ def configure_entry_timings(entry_config: dict, logging_job: dict):
     entry_config["endOffset"] = entry_config.get("endOffset", logging_job.get("endOffset"))
 
     if entry_config.get("startTime") is None and entry_config.get("endTime") is None:
-        entry_config["startTime"] = datetime.today()
+        entry_config["startTime"] = datetime.now()
         entry_config["endTime"] = entry_config["startTime"]
     elif entry_config.get("startTime") is None:
         entry_config["endTime"] = parse_datetime(entry_config["endTime"])
@@ -177,7 +144,7 @@ def configure_entry_timings(entry_config: dict, logging_job: dict):
 
     if entry_config["frequency"] == "once":
         entry_config["frequency"] = "1d"
-        entry_config["endTime"] = entry_config["startTime"]
+        entry_config["endTime"] = entry_config["startTime"] + timedelta(hours=1)
 
     entry_config["frequency"] = parse_timedelta_interval(entry_config["frequency"])
 
@@ -250,15 +217,15 @@ def get_gce_metadata(metadata_key: str) -> str:
 def configure_logging_job(logging_job: dict):
     logging_job["live"] = isinstance(logging_job.get("live"), bool) and logging_job["live"] == True
 
-    if logging_job.get("loggingEntries") is None:
-        logging_job["loggingEntries"] = [{}]
+    if logging_job.get("logEntries") is None:
+        logging_job["logEntries"] = [{}]
 
     if logging_job.get("variables") is None:
         logging_job["variables"] = []
 
     logging_job_vars = {_get_variable_name(var): var for var in logging_job["variables"]}
 
-    for logging_entry_id, logging_entry in enumerate(logging_job["loggingEntries"], start=1):
+    for logging_entry_id, logging_entry in enumerate(logging_job["logEntries"], start=1):
         temp_id = logging_entry.get("id", f"{logging_entry_id:03}")
         logging_entry["id"] = f"{logging_job["id"]}/{temp_id}"
         configure_entry_timings(logging_entry, logging_job)
@@ -273,7 +240,22 @@ def configure_logging_job(logging_job: dict):
 def configure_monitoring_job(monitoring_job: dict):
     monitoring_job["live"] = isinstance(monitoring_job.get("live"), bool) and monitoring_job["live"] == True
 
-    configure_job_timings(monitoring_job)
+    if monitoring_job.get("metricEntries") is None:
+        monitoring_job["metricEntries"] = [{}]
+
+    if monitoring_job.get("variables") is None:
+        monitoring_job["variables"] = []
+
+    monitoring_job_vars = {_get_variable_name(var): var for var in monitoring_job["variables"]}
+
+    for metric_entry_id, metric_entry in enumerate(monitoring_job["metricEntries"], start=1):
+        temp_id = metric_entry.get("id", f"{metric_entry_id:03}")
+        metric_entry["id"] = f"{monitoring_job["id"]}/{temp_id}"
+        configure_entry_timings(metric_entry, monitoring_job)
+        configure_variables(metric_entry, monitoring_job_vars)
+
+    del monitoring_job["variables"]
+    del monitoring_job_vars
 
     return monitoring_job["live"]
 

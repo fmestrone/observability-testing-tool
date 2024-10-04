@@ -29,11 +29,11 @@ def prepare():
     try:
         _config = parse_config(filename)
         if _config is None:
-            info_log("No config information was found. Is the file empty?")
+            error_log("No config information was found. Is the file empty?")
             exit(1)
         prepare_config(_config)
     except Exception as e:
-        info_log("There was an error parsing the configuration file", _config, e)
+        error_log("There was an error parsing the configuration file", _config, e)
         exit(1)
 
     if _config.get("cloudConfig") is not None:
@@ -74,7 +74,8 @@ def _split_var_name_index(var_name):
 
 
 # need the data sources for testability
-def expand_variables(variables: list, data_sources: dict) -> dict:
+def expand_variables(variables: list, data_sources: dict) -> dict | None:
+    if variables is None: return None
     debug_log("Received request to expand variables", variables)
     variables_expanded = {}
     for idx, var_config in enumerate(variables, start=1):
@@ -165,40 +166,79 @@ def run_logging_jobs() -> Process:
     global _config
     # https://docs.python.org/3/library/multiprocessing.html
     if _config["hasLiveLoggingJobs"]:
-        p = Process(target=_run_live_jobs, args=("loggingJobs", handle_logging_job, _config))
+        p = Process(target=_run_live_jobs, args=("loggingJobs", "logEntries", handle_logging_job, _config))
         p.start()
     else:
         p = None
-    _run_batch_jobs("loggingJobs", handle_logging_job)
+    _run_batch_jobs("loggingJobs", "logEntries", handle_logging_job)
     return p
 
 
 def run_monitoring_jobs() -> Process:
     global _config
     # https://docs.python.org/3/library/multiprocessing.html
-    # https://docs.python.org/3/library/multiprocessing.html
     if _config["hasLiveMonitoringJobs"]:
-        p = Process(target=_run_live_jobs, args=("monitoringJobs", handle_monitoring_job, _config))
+        p = Process(target=_run_live_jobs, args=("monitoringJobs", "metricEntries", handle_monitoring_job, _config))
         p.start()
     else:
         p = None
-    _run_batch_jobs("monitoringJobs", handle_monitoring_job)
+    _run_batch_jobs("monitoringJobs", "metricEntries", handle_monitoring_job)
     return p
 
+def _run_jobs(config: dict):
+    # https://docs.python.org/3/library/multiprocessing.html
+    has_live_jobs = bool(config["hasLiveJobs"])
+    job_config = config["jobConfig"]
+    data_sources = job_config["dataSources"]
+    handler = job_config["handler"]
+    if has_live_jobs:
+        p = Process(target=_run_live_jobs, args=(job_config, data_sources, handler))
+        p.start()
+    else:
+        p = None
+    _run_batch_jobs(job_config, data_sources, handler)
+    return p
 
-def _run_live_jobs(jobs_key: str, handler: Callable, config: dict):
+def _run_live_jobs2(jobs_config: dict, data_sources: dict, handler: Callable):
+    setup_logging_client()
+    schedule = sched.scheduler(time, sleep)
+    jobs = jobs_config["jobs"]
+    job_entries = jobs_config["entries"]
+    for job in jobs:
+        if not job["live"]: continue
+        job_key = f"LiveJob [{job['id']}]"
+        job_config = dict(job)
+        for entry in job_entries:
+            entry = job_config | entry
+            start_time = entry["startTime"]
+            debug_log(f"{job_key}: Queuing into scheduler", job)
+            if start_time > datetime.now():
+                schedule.enter(0, 1, _handle_live_job, (schedule, entry, data_sources, handler))
+            else:
+                schedule.enterabs(start_time.timestamp(), 1, _handle_live_job, (schedule, entry, data_sources, handler))
+    schedule.run(True)
+    info_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
+    exit(0)
+
+
+def _run_live_jobs(jobs_key: str, entries_key: str, handler: Callable, config: dict):
     setup_logging_client()
     schedule = sched.scheduler(time, sleep)
     for job in config[jobs_key]:
         if not job["live"]: continue
         job_key = f"LiveJob [{job['id']}]"
-        debug_log(f"{job_key}: Queuing into scheduler", job)
-        if job["startTime"] > datetime.now():
-            schedule.enter(0, 1, _handle_live_job, (schedule, job, config["dataSources"], handler))
-        else:
-            schedule.enterabs(job["startTime"].timestamp(), 1, _handle_live_job, (schedule, job, config["dataSources"], handler))
+        job_config = dict(job)
+        del job_config[entries_key]
+        for entry in job[entries_key]:
+            entry = job_config | entry
+            start_time = entry["startTime"]
+            debug_log(f"{job_key}: Queuing into scheduler", job)
+            if start_time > datetime.now():
+                schedule.enter(0, 1, _handle_live_job, (schedule, entry, config["dataSources"], handler))
+            else:
+                schedule.enterabs(start_time.timestamp(), 1, _handle_live_job, (schedule, entry, config["dataSources"], handler))
     schedule.run(True)
-    debug_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
+    info_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
     exit(0)
 
 
@@ -206,34 +246,28 @@ def _handle_live_job(schedule: sched.scheduler, job: dict, data_sources: dict, h
     job_key = job["id"]
     debug_log(f"{job_key}: Running scheduled job", job)
     if datetime.now() >= job["endTime"]: return
-    if job.get("variables") is not None:
-        vars_dict = expand_variables(job["variables"], data_sources)
-    else:
-        vars_dict = None
+    vars_dict = expand_variables(job.get("variables"), data_sources)
     handler(datetime.now(), job, vars_dict)
     next_time = next_timedelta_from_interval(job["frequency"])
     debug_log(f"{job_key}: Next Execution for in {next_time}")
     schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (schedule, job, data_sources, handler))
 
 
-def _run_batch_jobs(jobs_key: str, handler: Callable):
+def _run_batch_jobs(jobs_key: str, entry_key: str, handler: Callable):
     for job in _config[jobs_key]:
         if job["live"]: continue
         sleep(0.5)
-        jobConfig = dict(job)
-        del jobConfig["loggingEntries"]
-        for entry in job["loggingEntries"]:
-            entry = jobConfig | entry
+        job_config = dict(job)
+        del job_config[entry_key]
+        for entry in job[entry_key]:
+            entry = job_config | entry
             submit_time = entry["startTime"]
             end_time = entry["endTime"]
             frequency = entry["frequency"]
             info_log(f"{entry['id']}: Starting job from {submit_time} to {end_time} every {frequency}")
-            while submit_time <= end_time: # use "<=" because same value means execute once!
+            while submit_time < end_time:
                 sleep(0.05) # avoid exceeding burn rate of API
-                if entry.get("variables") is not None:
-                    vars_dict = expand_variables(entry["variables"], _config["dataSources"])
-                else:
-                    vars_dict = None
+                vars_dict = expand_variables(entry["variables"], _config["dataSources"])
 
                 handler(submit_time, entry, vars_dict)
 
@@ -295,17 +329,18 @@ def create_metrics_descriptors():
         sleep(0.01)
 
         project_id = metric_descriptor.get("projectId")
-        if metric_descriptor.get("variables") is not None:
-            vars_dict = expand_variables(metric_descriptor["variables"], _config["dataSources"])
-        else:
-            vars_dict = None
+        metric_type = metric_descriptor.get("metricType")
+        metric_kind = metric_descriptor.get("metricKind")
+        value_type = metric_descriptor.get("valueType")
+        metric_name = metric_descriptor.get("metricName")
+        vars_dict = expand_variables(metric_descriptor.get("variables"), _config["dataSources"])
         if vars_dict is not None:
-            if project_id is not None:
-                project_id = format_str_payload(vars_dict, project_id)
+            project_id = format_str_payload(vars_dict, project_id)
 
+        info_log(f"Metrics Descriptor: Creating {metric_name} ({metric_type},{metric_kind}, {value_type}) in {project_id}")
         submit_metric_descriptor(
-            metric_descriptor["type"], metric_descriptor["metricKind"], metric_descriptor["valueType"],
-            name=metric_descriptor.get("name"),
+            metric_type, metric_kind, value_type,
+            name=metric_name,
             project_id=project_id,
             unit=metric_descriptor.get("unit"),
             description=metric_descriptor.get("description"),
@@ -317,20 +352,26 @@ def create_metrics_descriptors():
 
 
 def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
-    metric_labels = job.get("metricLabels")
-    resource_labels = job.get("resourceLabels")
-    project_id = job.get("projectId")
+    job_key = job["id"]
+    metric_type = job["metricType"]
     if vars_dict is None:
         metric_value = float(job["metricValue"])
+        metric_labels = job.get("metricLabels")
+        resource_type = job.get("resourceType")
+        resource_labels = job.get("resourceLabels")
+        project_id = job.get("projectId")
     else:
         metric_value = float(format_str_payload(vars_dict, job["metricValue"]))
-        metric_labels = format_dict_payload(vars_dict, metric_labels)
-        resource_labels = format_dict_payload(vars_dict, resource_labels)
-        project_id = format_str_payload(vars_dict, project_id)
+        metric_labels = format_dict_payload(vars_dict, job.get("metricLabels"))
+        resource_type = format_str_payload(vars_dict, job.get("resourceType"))
+        resource_labels = format_dict_payload(vars_dict, job.get("resourceLabels"))
+        project_id = format_str_payload(vars_dict, job.get("projectId"))
+
+    info_log(f"{job_key}: Sending metric time series value for {metric_type} = {metric_value}")
     submit_gauge_metric(
-        metric_value, job["metricType"], submit_time,
+        metric_value, metric_type, submit_time,
         project_id=project_id,
         metric_labels=metric_labels,
-        resource_type=job.get("resourceType"),
+        resource_type=resource_type,
         resource_labels=resource_labels
     )

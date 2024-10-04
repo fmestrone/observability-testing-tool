@@ -26,79 +26,79 @@ dataSources:
     value: "float"
     range: "10.0 ~ 99.0"
 
-loggingJobs:
-  - live: true
-    endOffset: "1h"
-    frequency: "10s ~ 50s"
-    textPayload: "hello from python log generator in project {project} from {ipAddress}"
-    level: DEBUG
-    resourceType: "gce_instance"
-    resourceLabels:
-      instance_id: "123456789123456789"
-      zone: "us-central1-f"
-    labels:
-      foo: bar
-    other:
-      trace: "T01234-YXZ"
-      http_request:
-        requestUrl: "localhost"
-    variables:
-      - name: "project"
-        dataSource: "someEnvValue"
-      - name: "ipAddress"
-        dataSource: "someIpAddresses"
-        selector: "any"
-  - startOffset: "-1h"
-    frequency: "5s ~ 30s"
-    jsonPayload:
-      theMessage: "This is a cool logging message"
-      ipAddress: "{ip}"
-      project: "{prj}"
-      otherStuff:
-        novars: 1
-    level: INFO
-    resourceType: "gce_instance"
-    resourceLabels:
-      instance_id: "123456789123456789"
-      zone: "us-central1-f"
-    labels:
-      foo: bar
-    other:
-      trace: "T01234-YXZ"
-      http_request:
-        requestUrl: "localhost"
-    variables:
-      - name: "prj"
-        dataSource: "someEnvValue"
-      - name: "ip"
-        dataSource: "someIpAddresses"
-        selector: "any"
-  - startOffset: "-1h"
-    frequency: "10s ~ 20s"
-    protoPayload:
-      "@type": "type.googleapis.com/google.appengine.logging.v1.RequestLog"
-      appEngineRelease: "1.9.71"
-      appId: "s~eduenko-suite"
-      endTime: "{prj}"
-      otherStuff:
-        novars: 1
-    level: ERROR
-    resourceType: "gce_instance"
-    resourceLabels:
-      instance_id: "123456789123456789"
-      zone: "us-central1-f"
-    labels:
-      foo: bar
-    other:
-      trace: "T01234-YXZ"
-      http_request:
-        requestUrl: "localhost"
-    variables:
-      - name: "prj"
-        dataSource: "someEnvValue"
-      - name: "ip"
-        dataSource: "someIpAddresses"
-        selector: "any"
+#loggingJobs:
+#  - live: true
+#    endOffset: "1h"
+#    frequency: "10s ~ 50s"
+#    textPayload: "hello from python log generator in project {project} from {ipAddress}"
+#    level: DEBUG
+#    resourceType: "gce_instance"
+#    resourceLabels:
+#      instance_id: "123456789123456789"
+#      zone: "us-central1-f"
+#    labels:
+#      foo: bar
+#    other:
+#      trace: "T01234-YXZ"
+#      http_request:
+#        requestUrl: "localhost"
+#    variables:
+#      - name: "project"
+#        dataSource: "someEnvValue"
+#      - name: "ipAddress"
+#        dataSource: "someIpAddresses"
+#        selector: "any"
+#  - startOffset: "-1h"
+#    frequency: "5s ~ 30s"
+#    jsonPayload:
+#      theMessage: "This is a cool logging message"
+#      ipAddress: "{ip}"
+#      project: "{prj}"
+#      otherStuff:
+#        novars: 1
+#    level: INFO
+#    resourceType: "gce_instance"
+#    resourceLabels:
+#      instance_id: "123456789123456789"
+#      zone: "us-central1-f"
+#    labels:
+#      foo: bar
+#    other:
+#      trace: "T01234-YXZ"
+#      http_request:
+#        requestUrl: "localhost"
+#    variables:
+#      - name: "prj"
+#        dataSource: "someEnvValue"
+#      - name: "ip"
+#        dataSource: "someIpAddresses"
+#        selector: "any"
+#  - startOffset: "-1h"
+#    frequency: "10s ~ 20s"
+#    protoPayload:
+#      "@type": "type.googleapis.com/google.appengine.logging.v1.RequestLog"
+#      appEngineRelease: "1.9.71"
+#      appId: "s~eduenko-suite"
+#      endTime: "{prj}"
+#      otherStuff:
+#        novars: 1
+#    level: ERROR
+#    resourceType: "gce_instance"
+#    resourceLabels:
+#      instance_id: "123456789123456789"
+#      zone: "us-central1-f"
+#    labels:
+#      foo: bar
+#    other:
+#      trace: "T01234-YXZ"
+#      http_request:
+#        requestUrl: "localhost"
+#    variables:
+#      - name: "prj"
+#        dataSource: "someEnvValue"
+#      - name: "ip"
+#        dataSource: "someIpAddresses"
+#        selector: "any"
 
 metricDescriptors:
   - name: "python_app_count"
@@ -117,9 +117,9 @@ metricDescriptors:
       - "gce_instance"
 
 monitoringJobs:
-  - live: false
-    startOffset: "-1h"
-    frequency: "15s"
+  - live: true
+    endOffset: "3m"
+    frequency: "5s"
     metricType: "advobv/queries/python_app_count"
     metricLabels:
       python_app_ip: "{ip}"

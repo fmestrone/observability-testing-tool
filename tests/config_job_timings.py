@@ -1,24 +1,23 @@
 import unittest
 from datetime import timedelta, datetime
 
-from config.parser import configure_job_timings
+from config.parser import configure_entry_timings
 
 
 class JobTimingsTests(unittest.TestCase):
 
     def test_empty_value(self):
-        with self.assertRaises(KeyError):
-            configure_job_timings({})
+        with self.assertRaises(ValueError):
+            configure_entry_timings({}, {"live": False})
 
 
     def test_no_frequency(self):
         config = {
-            "live": False,
             "startTime": "2024-10-9 10:00",
             "endTime": "2024-10-9 15:00",
         }
-        with self.assertRaises(KeyError):
-            configure_job_timings(config)
+        with self.assertRaises(ValueError):
+            configure_entry_timings(config, {"live": False})
 
 
     def test_no_offset_with_same_start_end_1(self):
@@ -27,7 +26,7 @@ class JobTimingsTests(unittest.TestCase):
             "frequency": "30s"
         }
         with self.assertRaises(ValueError):
-            configure_job_timings(config)
+            configure_entry_timings(config, {"live": False})
 
 
     def test_no_offset_with_same_start_end_2(self):
@@ -38,7 +37,7 @@ class JobTimingsTests(unittest.TestCase):
             "endTime": "2024-10-9 15:00"
         }
         with self.assertRaises(ValueError):
-            configure_job_timings(config)
+            configure_entry_timings(config, {"live": False})
 
 
     def test_same_start_end_with_offset(self):
@@ -47,13 +46,13 @@ class JobTimingsTests(unittest.TestCase):
             "frequency": "3.5m",
             "endOffset": "7h"
         }
-        configure_job_timings(config)
+        configure_entry_timings(config, {"live": False})
         self.assertFalse(config["live"])
         self.assertEqual(timedelta(minutes=3.5), config["frequency"])
         self.assertEqual(config["startTime"], config["originalEndTime"])
         self.assertEqual(config["originalEndTime"] + timedelta(hours=7), config["endTime"])
         self.assertEqual(config["endOffset"], timedelta(hours=7))
-        self.assertNotIn("startOffset", config)
+        self.assertIsNone(config["startOffset"])
 
 
     def test_defaults_1(self):
@@ -63,14 +62,14 @@ class JobTimingsTests(unittest.TestCase):
             "startTime": "2024-10-09 15:00",
             "endOffset": "5m"
         }
-        configure_job_timings(config)
+        configure_entry_timings(config, {"live": False})
         self.assertFalse(config["live"])
         self.assertEqual(timedelta(seconds=30), config["frequency"])
         self.assertEqual(config["startTime"], config["originalEndTime"])
         self.assertEqual(config["startTime"] + timedelta(minutes=5), config["endTime"])
         self.assertEqual(config["endOffset"], timedelta(minutes=5))
         self.assertIn("endTime", config)
-        self.assertNotIn("startOffset", config)
+        self.assertIsNone(config["startOffset"])
 
 
     def test_defaults_2(self):
@@ -80,14 +79,14 @@ class JobTimingsTests(unittest.TestCase):
             "endTime": "2024-10-09 15:00",
             "startOffset": "-90s"
         }
-        configure_job_timings(config)
+        configure_entry_timings(config, {"live": False})
         self.assertFalse(config["live"])
         self.assertEqual(timedelta(minutes=13), config["frequency"])
         self.assertEqual(config["endTime"], config["originalStartTime"])
         self.assertEqual(config["endTime"] - timedelta(seconds=90), config["startTime"])
         self.assertEqual(config["startOffset"], timedelta(seconds=-90))
         self.assertIn("startTime", config)
-        self.assertNotIn("endOffset", config)
+        self.assertIsNone(config["endOffset"])
 
 
     def test_defaults_3(self):
@@ -98,7 +97,7 @@ class JobTimingsTests(unittest.TestCase):
             "endTime": "2024-10-12 15:00",
             "startOffset": "10s~99s"
         }
-        configure_job_timings(config)
+        configure_entry_timings(config, {"live": False})
         self.assertFalse(config["live"])
         self.assertEqual({
             "from": timedelta(hours=1),
@@ -111,7 +110,7 @@ class JobTimingsTests(unittest.TestCase):
             "to": timedelta(seconds=99)
         })
         self.assertIn("startTime", config)
-        self.assertNotIn("endOffset", config)
+        self.assertIsNone(config["endOffset"])
 
     def test_back_from_now(self):
         config = {
@@ -119,7 +118,7 @@ class JobTimingsTests(unittest.TestCase):
             "frequency": "1h~2h",
             "startOffset": "-24h"
         }
-        configure_job_timings(config)
+        configure_entry_timings(config, {"live": False})
         self.assertAlmostEqual((datetime.now() - timedelta(hours=24)).timestamp(), config["startTime"].timestamp(), places=3)
 
 
@@ -129,8 +128,18 @@ class JobTimingsTests(unittest.TestCase):
             "frequency": "1h~2h",
             "endOffset": "5h"
         }
-        configure_job_timings(config)
+        configure_entry_timings(config, {"live": False})
         self.assertAlmostEqual((datetime.now() + timedelta(hours=5)).timestamp(), config["endTime"].timestamp(), places=3)
+
+
+    def test_once(self):
+        config = {
+            "live": False,
+            "frequency": "once",
+            "startTime": "2024-10-09 15:00"
+        }
+        configure_entry_timings(config, {"live": False})
+        self.assertGreater(config["startTime"] + config["frequency"], config["endTime"])
 
 
 if __name__ == '__main__':

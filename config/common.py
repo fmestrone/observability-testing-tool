@@ -1,7 +1,7 @@
 from os import getenv
 
 
-__ADVOBS_DEBUG = int(getenv("ADVOBS_DEBUG"))
+__ADVOBS_DEBUG = int(getenv("ADVOBS_DEBUG", 0))
 
 
 def debug_log(message: str, object: any = None, exception: Exception = None):
@@ -26,5 +26,8 @@ def error_log(message: str, object: any = None, exception: Exception = None, lev
     if object is not None:
         print(f"{log_header} ", object, sep="| ")
     if exception is not None:
-        print(f"{log_header} ", "".join(format_exception(exception, limit=None, chain=True)), sep="| ")
+        if __ADVOBS_DEBUG >= 2:
+            print(f"{log_header} ", "".join(format_exception(exception, limit=None, chain=True)), sep="| ")
+        else:
+            print(f"{log_header} ", repr(exception), sep="| ")
     print()

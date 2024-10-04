@@ -22,13 +22,6 @@ dataSources:
       - ["CRITICAL", "Too many denied attempts from"]
       - ["INFO", "Access succeeded from"]
       - ["WARNING", "Access succeeded from"]
-  logName:
-    type: "list"
-    value:
-      - "python"
-      - "flask-app"
-      - "eshop-test"
-      - "test-orders"
   ips:
     type: "list"
     value:
@@ -64,16 +57,12 @@ dataSources:
   vmProjectId:
     type: "gce-metadata"
     value: "project/project-id"
-  actionId:
-    type: "random"
-    value: "int"
-    range: "32109 ~ 36543"
 
 loggingJobs:
 
-  - logName: "{logName}"
-    startOffset: "-15d"
-    endOffset: "-1d"
+  - live: true
+    logName: "eshop-orders"
+    endOffset: "2h"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -82,10 +71,7 @@ loggingJobs:
     variables:
       - "vmProjectId"
       - "vmId"
-      - "actionId"
-      - "logName"
-      - name: "messages"
-        selector: "any"
+      - "messages"
       - name: "vmZone"
         extractor: "/zones/([a-z0-9\\-]+)$"
     logEntries:
@@ -97,52 +83,14 @@ loggingJobs:
         variables:
           - name: "ips"
             selector: "1"
-      - frequency: "2d~14d"
+      - frequency: "15s"
+        startOffset: "5m"
         textPayload: "Looks like systems may be going down soon! Act Now!"
         level: "EMERGENCY"
-      - frequency: "1h~2h"
-        textPayload: "{messages[1]} - Action: #{actionId} {messages[2]}"
-        level: "{messages[0]}"
-      - startOffset: "-2d"
-        endOffset: "-23h"
-        frequency: "1h"
-        textPayload: "{messages[1]} - Action: #15365 {messages[2]}"
-        level: "{messages[0]}"
 
-  - logName: "eshop-orders"
-    startOffset: "-48h"
-    resourceType: "gce_instance"
-    resourceLabels:
-      instance_id: "{vmId}"
-      project_id: "{vmProjectId}"
-      zone: "{vmZone}"
-    variables:
-      - name: "messages"
-        selector: "any"
-      - "vmProjectId"
-      - "vmId"
-      - name: "vmZone"
-        extractor: "/zones/([a-z0-9\\-]+)$"
-    logEntries:
-      - frequency: "40s~3m"
-        jsonPayload:
-          message: "{messages[1]}"
-          action: "{messages[2]}"
-        level: "{messages[0]}"
-      - frequency: "20h~72h"
-        textPayload: "Looks like systems may be going down soon! Act Now!"
-        level: "EMERGENCY"
-      - frequency: "2h~4h"
-        textPayload: "{messages[1]} - Action: #{actionId} {messages[2]}"
-        level: "{messages[0]}"
-        variables:
-          - "actionId"
-      - frequency: "2h~4h"
-        textPayload: "{messages[1]} - Action: {messages[2]}"
-        level: "{messages[0]}"
-
-  - logName: "eshop-server"
-    startOffset: "-48h"
+  - live: true
+    logName: "eshop-server"
+    endOffset: "2h"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -163,9 +111,7 @@ loggingJobs:
           message: "{cnxlogs[1]} {ips}"
           source: "{ips}"
         level: "{cnxlogs[0]}"
-      - startOffset: "-3h"
-        endOffset: "-2h30m"
-        frequency: "5s~15s"
+      - frequency: "5s~15s"
         jsonPayload:
           message: "{cnxlogs[1]} {ips}"
           source: "{ips}"
