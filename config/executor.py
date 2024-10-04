@@ -228,7 +228,7 @@ def _run_batch_jobs(jobs_key: str, handler: Callable):
             end_time = entry["endTime"]
             frequency = entry["frequency"]
             info_log(f"{entry['id']}: Starting job from {submit_time} to {end_time} every {frequency}")
-            while submit_time < end_time:
+            while submit_time <= end_time: # use "<=" because same value means execute once!
                 sleep(0.05) # avoid exceeding burn rate of API
                 if entry.get("variables") is not None:
                     vars_dict = expand_variables(entry["variables"], _config["dataSources"])

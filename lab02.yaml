@@ -26,7 +26,9 @@ dataSources:
     type: "list"
     value:
       - "python"
+      - "flask-app"
       - "eshop-test"
+      - "test-orders"
   ips:
     type: "list"
     value:
@@ -70,7 +72,8 @@ dataSources:
 loggingJobs:
 
   - logName: "{logName}"
-    startOffset: "-48h"
+    startOffset: "-15d"
+    endOffset: "-1d"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -86,7 +89,7 @@ loggingJobs:
       - name: "vmZone"
         extractor: "/zones/([a-z0-9\\-]+)$"
     loggingEntries:
-      - frequency: "90s~5m"
+      - frequency: "40s~3m"
         jsonPayload:
           message: "{messages[1]}"
           action: "{messages[2]}"
@@ -94,13 +97,13 @@ loggingJobs:
         variables:
           - name: "ips"
             selector: "1"
-      - frequency: "12h~52h"
+      - frequency: "2d~14d"
         textPayload: "Looks like systems may be going down soon! Act Now!"
         level: "EMERGENCY"
-      - frequency: "3h~4h"
+      - frequency: "1h~2h"
         textPayload: "{messages[1]} - Action: #{actionId} {messages[2]}"
         level: "{messages[0]}"
-      - startOffset: "-24h"
+      - startOffset: "-2d"
         endOffset: "-23h"
         frequency: "1h"
         textPayload: "{messages[1]} - Action: #15365 {messages[2]}"

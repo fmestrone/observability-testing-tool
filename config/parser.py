@@ -147,8 +147,6 @@ def configure_entry_timings(entry_config: dict, logging_job: dict):
     if entry_config.get("frequency") is None:
         raise ValueError("Frequency must be specified either in the job config or in the entry config")
 
-    entry_config["frequency"] = parse_timedelta_interval(entry_config["frequency"])
-
     entry_config["startTime"] = entry_config.get("startTime", logging_job.get("startTime"))
     entry_config["endTime"] = entry_config.get("endTime", logging_job.get("endTime"))
     entry_config["startOffset"] = entry_config.get("startOffset", logging_job.get("startOffset"))
@@ -176,6 +174,12 @@ def configure_entry_timings(entry_config: dict, logging_job: dict):
         entry_config["originalEndTime"] = entry_config["endTime"]
         entry_config["endOffset"] = parse_timedelta_interval(entry_config["endOffset"])
         entry_config["endTime"] = entry_config["originalEndTime"] + next_timedelta_from_interval(entry_config["endOffset"])
+
+    if entry_config["frequency"] == "once":
+        entry_config["frequency"] = "1d"
+        entry_config["endTime"] = entry_config["startTime"]
+
+    entry_config["frequency"] = parse_timedelta_interval(entry_config["frequency"])
 
     if logging_job["live"] and entry_config["startTime"] < current_timestamp:
         raise ValueError("Live job must start now or later")
