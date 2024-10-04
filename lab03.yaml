@@ -57,6 +57,12 @@ dataSources:
   vmProjectId:
     type: "gce-metadata"
     value: "project/project-id"
+  serverId:
+    type: "list"
+    value:
+      - eshop-db1
+      - eshop-db2
+      - eshop-db3
 
 loggingJobs:
 
@@ -85,8 +91,14 @@ loggingJobs:
             selector: "1"
       - frequency: "15s"
         startOffset: "5m"
-        textPayload: "Looks like systems may be going down soon! Act Now!"
+        endOffset: "30m"
+        textPayload: "Data storage systems are not responding"
         level: "EMERGENCY"
+        labels:
+          server_id: "{serverId}"
+          server: "EShop DB Instance: {serverId} on "
+        variables:
+          - "serverId"
 
   - live: true
     logName: "eshop-server"

@@ -48,6 +48,12 @@ def prepare():
 
 
 def expand_list_variable(selector, value):
+    # TODO selector chooses item, range allows to limit values that selector acts on
+    # E.g. range: None, selector: any = random value from full list
+    # E.g. range: 5-9, selector: any = random value from sublist/slice
+    # E.g. range: None, selector: all = the full list
+    # E.g. range: 5-9, selector: all = the entire sublist/slice
+
     if selector == "any":
         return random.choice(value)
     elif selector == "first":
@@ -60,7 +66,6 @@ def expand_list_variable(selector, value):
         try:
             return value[int(selector)]
         except ValueError:
-            # TODO allow range selection (sublist/slice)
             raise ValueError(f"Variable '{value}' uses an invalid list selector '{selector}'")
 
 _regex_var_name_index = re.compile(r'^(?P<name>.+?)(\[(?P<index>.+)])?$')
@@ -87,7 +92,7 @@ def expand_variables(variables: list, data_sources: dict) -> dict | None:
             var_name = var_config["name"]
             data_source_name = var_config.get("dataSource", var_name)
         else:
-            raise ValueError(f"Variable {idx} is not configure correctly")
+            raise ValueError(f"Variable {idx} is not configured correctly")
         data_source = data_sources.get(data_source_name)
         if data_source is None:
             raise ValueError(f"Data source for '{var_name}' does not exist")
@@ -249,7 +254,7 @@ def _handle_live_job(schedule: sched.scheduler, job: dict, data_sources: dict, h
     vars_dict = expand_variables(job.get("variables"), data_sources)
     handler(datetime.now(), job, vars_dict)
     next_time = next_timedelta_from_interval(job["frequency"])
-    debug_log(f"{job_key}: Next Execution for in {next_time}")
+    info_log(f"{job_key}: Next Execution in {next_time}")
     schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (schedule, job, data_sources, handler))
 
 
@@ -300,28 +305,33 @@ def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
     }
 
     if job.get("jsonPayload") is not None:
+        log_payload_type = "JSON"
         if vars_dict is None:
-            json_payload = job["jsonPayload"]
+            payload = job["jsonPayload"]
         else:
-            json_payload = format_dict_payload(vars_dict, job["jsonPayload"])
-        info_log(f"{job_key}: Sending log with JSON Payload", json_payload)
-        submit_log_entry_json(severity, json_payload, **kw)
+            payload = format_dict_payload(vars_dict, job["jsonPayload"])
+        submit_log_entry_json(severity, payload, **kw)
 
     elif job.get("textPayload") is not None:
+        log_payload_type = "text"
         if vars_dict is None:
-            text_payload = job["textPayload"]
+            payload = job["textPayload"]
         else:
-            text_payload = format_str_payload(vars_dict, job["textPayload"])
-        info_log(f"{job_key}: Sending log with text Payload", text_payload)
-        submit_log_entry(severity, text_payload, **kw)
+            payload = format_str_payload(vars_dict, job["textPayload"])
+        submit_log_entry(severity, payload, **kw)
 
     elif job.get("protoPayload") is not None:
+        log_payload_type = "ProtoBuf"
         if vars_dict is None:
-            proto_payload = job["protoPayload"]
+            payload = job["protoPayload"]
         else:
-            proto_payload = format_dict_payload(vars_dict, job["protoPayload"])
-        info_log(f"{job_key}: Sending log with ProtoBuf Payload", proto_payload)
-        submit_log_entry_proto(severity, proto_payload, **kw)
+            payload = format_dict_payload(vars_dict, job["protoPayload"])
+        submit_log_entry_proto(severity, payload, **kw)
+
+    else:
+        raise ValueError(f"{job_key}: No payload available for log")
+
+    info_log(f"{job_key}: Sending {severity} log to {log_name} with {log_payload_type} payload at {submit_time}", payload)
 
 
 def create_metrics_descriptors():
