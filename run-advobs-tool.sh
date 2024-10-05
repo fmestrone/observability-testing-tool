@@ -8,10 +8,10 @@ cd /root || exit 1
 # Assign the first argument to a variable
 lab_number=$1
 
-# Use case to set the variable based on the parameter value
+# Copy the case statement and paste into run-lab-prep.sh
 case "$lab_number" in
     lab1)
-        lab_file=""
+        lab_file="/root/advanced-observability-querying-tool-v0.9.0/lab01.yaml"
         ;;
     lab2)
         lab_file="/root/advanced-observability-querying-tool-v0.9.0/lab02.yaml"
@@ -22,22 +22,46 @@ case "$lab_number" in
     lab3part2)
         lab_file="/root/advanced-observability-querying-tool-v0.9.0/lab03b.yaml"
         ;;
-    value4)
+    lab4)
         lab_file=""
+        ;;
+    verify)
+        lab_file="verify"
+        ;;
+    startup)
+        lab_file="startup"
         ;;
     *)
         lab_file=""  # Default case if none match
         ;;
 esac
+# End copy
 
 if [[ -z "$lab_file" ]]; then
     echo "Error: Invalid lab name."
     exit 1
 fi
 
-. /root/advanced-observability-querying-tool-v0.9.0/.venv/bin/activate
-ADVOBS_DEBUG=1 python /root/advanced-observability-querying-tool-v0.9.0/main.py $lab_file > advobs-$lab_number.log 2>&1 &
+if [ "$lab_file" = "verify" ]; then
 
-lab_pid=$!
+  HOSTNAME=$(hostname)
+  VERSION=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/attributes/version" -H "Metadata-Flavor: Google")
+  META_REGION_STRING=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/zone" -H "Metadata-Flavor: Google")
+  REGION=`echo "$META_REGION_STRING" | awk -F/ '{print $4}'`
 
-echo $lab_pid > advobs-$lab_number.pid
+  echo "ok! ($VERSION) $HOSTNAME in $REGION"
+
+elif [ "$lab_file" = "startup" ]; then
+
+  sudo google_metadata_script_runner startup
+
+else
+
+  . /root/advanced-observability-querying-tool-v0.9.0/.venv/bin/activate
+  ADVOBS_DEBUG=1 python /root/advanced-observability-querying-tool-v0.9.0/main.py $lab_file > advobs-$lab_number.log 2>&1 &
+
+  lab_pid=$!
+
+  echo $lab_pid > advobs-$lab_number.pid
+
+fi
