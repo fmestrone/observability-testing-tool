@@ -1,0 +1,98 @@
+dataSources:
+  messages:
+    type: "list"
+    value:
+      - ["ERROR", "Could not access Orders database", "connect"]
+      - ["INFO", "Executing order-create action", "order-create"]
+      - ["INFO", "Executing order-create action", "order-create"]
+      - ["INFO", "Executing order-discard action", "order-discard"]
+      - ["NOTICE", "Stock request to fulfill order-create action", "order-stock"]
+      - ["INFO", "Executing order-submit action", "order-submit"]
+      - ["INFO", "Executing order-submit action", "order-submit"]
+      - ["INFO", "Executing order-submit action", "order-submit"]
+      - ["WARNING", "Database response time was slow (over 250ms)", "connect"]
+      - ["INFO", "Executing order-create action", "order-create"]
+      - ["NOTICE", "Stock request to fulfill order-create action", "order-stock"]
+      - ["INFO", "Executing order-create action", "order-create"]
+      - ["INFO", "Executing order-create action", "order-create"]
+      - ["DEBUG", "Initializing app", "init"]
+  cnxlogs:
+    type: "list"
+    value:
+      - ["CRITICAL", "Too many denied attempts from"]
+      - ["INFO", "Access succeeded from"]
+      - ["WARNING", "Access succeeded from"]
+  ips:
+    type: "list"
+    value:
+      - "111.144.187.212"
+      - "233.142.26.173"
+      - "65.44.51.196"
+      - "229.15.109.233"
+      - "210.34.246.74"
+      - "136.250.243.161"
+      - "83.8.35.71"
+      - "2.116.82.111"
+      - "106.237.14.54"
+      - "13.30.17.185"
+      - "77.68.25.151"
+      - "106.81.246.38"
+      - "141.4.119.20"
+      - "244.102.94.157"
+      - "77.121.52.139"
+      - "13.30.17.14"
+      - "13.30.17.94"
+      - "13.30.17.108"
+      - "13.30.17.122"
+      - "13.30.17.255"
+      - "13.30.17.246"
+      - "13.30.17.165"
+      - "13.30.17.17"
+  vmId:
+    type: "gce-metadata"
+    value: "instance/id"
+  vmZone:
+    type: "gce-metadata"
+    value: "instance/zone"
+  vmProjectId:
+    type: "gce-metadata"
+    value: "project/project-id"
+  serverId:
+    type: "list"
+    value:
+      - eshop-db1
+      - eshop-db2
+      - eshop-db3
+
+metricDescriptors:
+  - name: "db_recover_sys"
+    type: "advobv/db_recover_sys"
+    metricKind: "GAUGE"
+    valueType: "DOUBLE"
+    unit: "ms"
+    description: "The heartbeat checker for the application database with recovery."
+    displayName: "Database Recovery System"
+    launchStage: "GA"
+    labels:
+      - key: "target_server"
+        valueType: "STRING"
+        description: "The Database server monitored by this Recovery System."
+    monitoredResourceTypes:
+      - "gce_instance"
+  - name: "resource_load"
+    type: "advobv/resource_load"
+    metricKind: "GAUGE"
+    valueType: "DOUBLE"
+    unit: "ms"
+    description: "The heartbeat checker for the application database with recovery."
+    displayName: "Database Resource Load"
+    launchStage: "GA"
+    labels:
+      - key: "server"
+        valueType: "STRING"
+        description: "The Database server instance identifier."
+    monitoredResourceTypes:
+      - "gce_instance"
+
+monitoringJobs:
+  - live: true

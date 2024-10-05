@@ -190,6 +190,7 @@ def run_monitoring_jobs() -> Process:
     _run_batch_jobs("monitoringJobs", "metricEntries", handle_monitoring_job)
     return p
 
+# NOT IN USE - FUTURE IDEA
 def _run_jobs(config: dict):
     # https://docs.python.org/3/library/multiprocessing.html
     has_live_jobs = bool(config["hasLiveJobs"])
@@ -204,6 +205,7 @@ def _run_jobs(config: dict):
     _run_batch_jobs(job_config, data_sources, handler)
     return p
 
+# NOT IN USE - FUTURE IDEA
 def _run_live_jobs2(jobs_config: dict, data_sources: dict, handler: Callable):
     setup_logging_client()
     schedule = sched.scheduler(time, sleep)
@@ -221,8 +223,8 @@ def _run_live_jobs2(jobs_config: dict, data_sources: dict, handler: Callable):
                 schedule.enter(0, 1, _handle_live_job, (schedule, entry, data_sources, handler))
             else:
                 schedule.enterabs(start_time.timestamp(), 1, _handle_live_job, (schedule, entry, data_sources, handler))
+    # info_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
     schedule.run(True)
-    info_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
     exit(0)
 
 
@@ -242,8 +244,8 @@ def _run_live_jobs(jobs_key: str, entries_key: str, handler: Callable, config: d
                 schedule.enter(0, 1, _handle_live_job, (schedule, entry, config["dataSources"], handler))
             else:
                 schedule.enterabs(start_time.timestamp(), 1, _handle_live_job, (schedule, entry, config["dataSources"], handler))
-    schedule.run(True)
     info_log(f"Initial Scheduler Queue for [{jobs_key}]", schedule.queue)
+    schedule.run(True)
     exit(0)
 
 
@@ -339,15 +341,15 @@ def create_metrics_descriptors():
         sleep(0.01)
 
         project_id = metric_descriptor.get("projectId")
-        metric_type = metric_descriptor.get("metricType")
+        metric_type = metric_descriptor.get("type")
         metric_kind = metric_descriptor.get("metricKind")
         value_type = metric_descriptor.get("valueType")
-        metric_name = metric_descriptor.get("metricName")
+        metric_name = metric_descriptor.get("name")
         vars_dict = expand_variables(metric_descriptor.get("variables"), _config["dataSources"])
         if vars_dict is not None:
             project_id = format_str_payload(vars_dict, project_id)
 
-        info_log(f"Metrics Descriptor: Creating {metric_name} ({metric_type},{metric_kind}, {value_type}) in {project_id}")
+        info_log(f"Metrics Descriptor: Creating {metric_name} ({metric_type}, {metric_kind}, {value_type}) in {project_id}")
         submit_metric_descriptor(
             metric_type, metric_kind, value_type,
             name=metric_name,
@@ -377,7 +379,7 @@ def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
         resource_labels = format_dict_payload(vars_dict, job.get("resourceLabels"))
         project_id = format_str_payload(vars_dict, job.get("projectId"))
 
-    info_log(f"{job_key}: Sending metric time series value for {metric_type} = {metric_value}")
+    info_log(f"{job_key}: Sending value in {project_id} for {metric_type} = {metric_value}")
     submit_gauge_metric(
         metric_value, metric_type, submit_time,
         project_id=project_id,
