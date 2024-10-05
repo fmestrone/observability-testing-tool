@@ -230,6 +230,7 @@ def _run_live_jobs2(jobs_config: dict, data_sources: dict, handler: Callable):
 
 def _run_live_jobs(jobs_key: str, entries_key: str, handler: Callable, config: dict):
     setup_logging_client()
+    setup_monitoring_client()
     schedule = sched.scheduler(time, sleep)
     for job in config[jobs_key]:
         if not job["live"]: continue
@@ -240,7 +241,7 @@ def _run_live_jobs(jobs_key: str, entries_key: str, handler: Callable, config: d
             entry = job_config | entry
             start_time = entry["startTime"]
             debug_log(f"{job_key}: Queuing into scheduler", job)
-            if start_time > datetime.now():
+            if start_time <= datetime.now():
                 schedule.enter(0, 1, _handle_live_job, (schedule, entry, config["dataSources"], handler))
             else:
                 schedule.enterabs(start_time.timestamp(), 1, _handle_live_job, (schedule, entry, config["dataSources"], handler))
@@ -252,7 +253,9 @@ def _run_live_jobs(jobs_key: str, entries_key: str, handler: Callable, config: d
 def _handle_live_job(schedule: sched.scheduler, job: dict, data_sources: dict, handler: Callable):
     job_key = job["id"]
     debug_log(f"{job_key}: Running scheduled job", job)
-    if datetime.now() >= job["endTime"]: return
+    if datetime.now() >= job["endTime"]:
+        info_log(f"{job_key}: Job has completed (past end time)")
+        return
     vars_dict = expand_variables(job.get("variables"), data_sources)
     handler(datetime.now(), job, vars_dict)
     next_time = next_timedelta_from_interval(job["frequency"])
@@ -379,7 +382,7 @@ def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
         resource_labels = format_dict_payload(vars_dict, job.get("resourceLabels"))
         project_id = format_str_payload(vars_dict, job.get("projectId"))
 
-    info_log(f"{job_key}: Sending value in {project_id} for {metric_type} = {metric_value}")
+    info_log(f"{job_key}: Sending {metric_type} in {project_id} = {metric_value}")
     submit_gauge_metric(
         metric_value, metric_type, submit_time,
         project_id=project_id,

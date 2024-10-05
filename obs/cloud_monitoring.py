@@ -83,9 +83,12 @@ def submit_metric_descriptor(metric_type, kind, value_type, name = None, project
     if name is not None: descriptor.name = name
     descriptor.type = f"custom.googleapis.com/{metric_type}"
 
-    descriptor_path = monitoringClient.metric_descriptor_path(project_id, descriptor.type)
     try:
-        monitoringClient.get_metric_descriptor(name=descriptor_path)
+        if __ADVOBS_DRY_RUN:
+            raise google.api_core.exceptions.NotFound("Dry Running")
+        else:
+            descriptor_path = monitoringClient.metric_descriptor_path(project_id, descriptor.type)
+            monitoringClient.get_metric_descriptor(name=descriptor_path)
     except google.api_core.exceptions.NotFound:
         descriptor.metric_kind = kind
         descriptor.value_type = value_type
