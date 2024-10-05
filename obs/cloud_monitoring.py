@@ -1,3 +1,4 @@
+import google
 from google.cloud import monitoring_v3
 from google.api import metric_pb2
 from google.api import label_pb2
@@ -75,33 +76,40 @@ def submit_metric(value: float, metric_type, interval, project_id = None, metric
         monitoringClient.create_time_series(request={"name": project_name, "time_series": [series]})
 
 
-def submit_metric_descriptor(type, kind, value_type, name = None, project_id = None, unit = None, description = None, display_name = None, launch_stage = None, labels = None, monitored_resource_types = None):
+def submit_metric_descriptor(metric_type, kind, value_type, name = None, project_id = None, unit = None, description = None, display_name = None, launch_stage = None, labels = None, monitored_resource_types = None):
+    project_id = project_id if project_id is not None else getenv('GOOGLE_CLOUD_PROJECT')
+
     descriptor = metric_pb2.MetricDescriptor()
     if name is not None: descriptor.name = name
-    descriptor.type = f"custom.googleapis.com/{type}"
-    descriptor.metric_kind = kind
-    descriptor.value_type = value_type
-    if unit is not None: descriptor.unit = unit
-    if description is not None: descriptor.description = description
-    if display_name is not None: descriptor.display_name = display_name
-    if launch_stage is not None: descriptor.launch_stage = launch_stage
+    descriptor.type = f"custom.googleapis.com/{metric_type}"
 
-    if labels is not None:
-        for label_dict in labels:
-            label = label_pb2.LabelDescriptor()
-            label.key = label_dict["key"]
-            label.value_type = label_dict["valueType"]
-            label.description = label_dict["description"]
-            descriptor.labels.append(label)
+    descriptor_path = monitoringClient.metric_descriptor_path(project_id, descriptor.type)
+    try:
+        monitoringClient.get_metric_descriptor(name=descriptor_path)
+    except google.api_core.exceptions.NotFound:
+        descriptor.metric_kind = kind
+        descriptor.value_type = value_type
+        if unit is not None: descriptor.unit = unit
+        if description is not None: descriptor.description = description
+        if display_name is not None: descriptor.display_name = display_name
+        if launch_stage is not None: descriptor.launch_stage = launch_stage
 
-    # for monitored_resource_type in monitored_resource_types:
-    #     descriptor.monitored_resource_types.append(monitored_resource_type)
-    if monitored_resource_types is not None:
-        descriptor.monitored_resource_types.extend(monitored_resource_types)
+        if labels is not None:
+            for label_dict in labels:
+                label = label_pb2.LabelDescriptor()
+                label.key = label_dict["key"]
+                label.value_type = label_dict["valueType"]
+                label.description = label_dict["description"]
+                descriptor.labels.append(label)
 
-    project_name = f"projects/{project_id if project_id is not None else getenv('GOOGLE_CLOUD_PROJECT')}"
+        # for monitored_resource_type in monitored_resource_types:
+        #     descriptor.monitored_resource_types.append(monitored_resource_type)
+        if monitored_resource_types is not None:
+            descriptor.monitored_resource_types.extend(monitored_resource_types)
 
-    if not __ADVOBS_DRY_RUN:
-        monitoringClient.create_metric_descriptor(
-            name=project_name, metric_descriptor=descriptor
-        )
+        project_name = f"projects/{project_id}"
+
+        if not __ADVOBS_DRY_RUN:
+            monitoringClient.create_metric_descriptor(
+                name=project_name, metric_descriptor=descriptor
+            )
