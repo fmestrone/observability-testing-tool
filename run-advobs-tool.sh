@@ -22,8 +22,8 @@ case "$lab_number" in
     lab3part2)
         lab_file="/root/advanced-observability-querying-tool-v0.9.0/lab03b.yaml"
         ;;
-    lab4)
-        lab_file=""
+    lab3part3)
+        lab_file="/root/advanced-observability-querying-tool-v0.9.0/lab03c.yaml"
         ;;
     verify)
         lab_file="verify"

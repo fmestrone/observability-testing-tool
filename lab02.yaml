@@ -21,7 +21,7 @@ dataSources:
     value:
       - ["CRITICAL", "Too many denied attempts from"]
       - ["INFO", "Access succeeded from"]
-      - ["WARNING", "Access succeeded from"]
+      - ["WARNING", "Access failed from"]
   logName:
     type: "list"
     value:
