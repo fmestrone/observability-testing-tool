@@ -15,11 +15,11 @@ dataSources:
   failedRequestsOk:
     type: "random"
     value: "float"
-    range: "0.0 ~ 45.0"
+    range: "0.0 ~ 10.0"
   failedRequestsKo:
     type: "random"
     value: "float"
-    range: "76.0 ~ 99.0"
+    range: "50.0 ~ 80.0"
   resourceUsageOk:
     type: "random"
     value: "float"
@@ -39,6 +39,9 @@ metricDescriptors:
     launchStage: "GA"
     monitoredResourceTypes:
       - "gce_instance"
+    projectId: "{vmProjectId}"
+    variables:
+      - "vmProjectId"
   - name: "db_resource_load"
     type: "advobv/db/resource_load"
     metricKind: "GAUGE"
@@ -49,6 +52,9 @@ metricDescriptors:
     launchStage: "GA"
     monitoredResourceTypes:
       - "gce_instance"
+    projectId: "{vmProjectId}"
+    variables:
+      - "vmProjectId"
   - name: "db_requests_failed"
     type: "advobv/db/requests_failed"
     metricKind: "GAUGE"
@@ -58,6 +64,9 @@ metricDescriptors:
     launchStage: "GA"
     monitoredResourceTypes:
       - "gce_instance"
+    projectId: "{vmProjectId}"
+    variables:
+      - "vmProjectId"
   - name: "db_requests_total"
     type: "advobv/db/requests_total"
     metricKind: "GAUGE"
@@ -67,6 +76,9 @@ metricDescriptors:
     launchStage: "GA"
     monitoredResourceTypes:
       - "gce_instance"
+    projectId: "{vmProjectId}"
+    variables:
+      - "vmProjectId"
 
 monitoringJobs:
   - live: true
@@ -79,7 +91,8 @@ monitoringJobs:
     projectId: "{vmProjectId}"
     variables:
       - "vmId"
-      - "vmZone"
+      - name: "vmZone"
+        extractor: "/zones/([a-z0-9\\-]+)$"
       - "vmProjectId"
       - "totalRequests"
     metricEntries:
