@@ -72,8 +72,7 @@ dataSources:
 loggingJobs:
 
   - logName: "{logName}"
-    startOffset: "-15d"
-    endOffset: "-1d"
+    startOffset: "-5d"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -110,7 +109,7 @@ loggingJobs:
         level: "{messages[0]}"
 
   - logName: "eshop-orders"
-    startOffset: "-48h"
+    startOffset: "-5d"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
@@ -142,7 +141,7 @@ loggingJobs:
         level: "{messages[0]}"
 
   - logName: "eshop-server"
-    startOffset: "-48h"
+    startOffset: "-5d"
     resourceType: "gce_instance"
     resourceLabels:
       instance_id: "{vmId}"
