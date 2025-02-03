@@ -201,7 +201,7 @@ def prepare_config(config: dict):
     for job_id, job in enumerate(config["monitoringJobs"], start=1):
         temp_id = job.get("id", f"{job_id:03}")
         job["id"] = f"mon#{temp_id}"
-        if configure_monitoring_job(job) and not config.get("hasLiveLoggingJobs"):
+        if configure_monitoring_job(job) and not config.get("hasLiveMonitoringJobs"):
             config["hasLiveMonitoringJobs"] = True
 
 
