@@ -70,12 +70,13 @@ def expand_list_variable(selector, value):
 
 _regex_var_name_index = re.compile(r'^(?P<name>.+?)(\[(?P<index>.+)])?$')
 
+
 def _split_var_name_index(var_name):
     parts = _regex_var_name_index.match(var_name)
     if parts is None:
-        return (var_name, None)
+        return var_name, None
     else:
-        return (parts.groupdict("name"), parts.groupdict("index"))
+        return parts.groupdict("name"), parts.groupdict("index")
 
 
 # need the data sources for testability

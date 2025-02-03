@@ -208,7 +208,7 @@ def prepare_config(config: dict):
 def get_gce_metadata(metadata_key: str) -> str:
     # This will only work from inside a GCE instance
     # See https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys
-    if __ADVOBS_NO_GCE_METADATA: return "Dummy GCE Metadata"
+    if __ADVOBS_NO_GCE_METADATA: return "NA"
     metadata_server = "http://metadata.google.internal/computeMetadata/v1/"
     metadata_flavor = {"Metadata-Flavor" : "Google"}
     return requests.get(metadata_server + metadata_key, headers = metadata_flavor).text
@@ -218,6 +218,7 @@ def configure_logging_job(logging_job: dict):
     logging_job["live"] = isinstance(logging_job.get("live"), bool) and logging_job["live"] == True
 
     if logging_job.get("logEntries") is None:
+        # TODO why not an empty array of entries?
         logging_job["logEntries"] = [{}]
 
     if logging_job.get("variables") is None:
@@ -241,6 +242,7 @@ def configure_monitoring_job(monitoring_job: dict):
     monitoring_job["live"] = isinstance(monitoring_job.get("live"), bool) and monitoring_job["live"] == True
 
     if monitoring_job.get("metricEntries") is None:
+        # TODO why not an empty array of entries?
         monitoring_job["metricEntries"] = [{}]
 
     if monitoring_job.get("variables") is None:
@@ -284,4 +286,3 @@ def configure_data_source(data_source: dict):
                     data_source["range"] = parse_float_range(data_source_range)
             case "gce-metadata":
                 data_source["__value__"] = get_gce_metadata(data_source_value)
-
