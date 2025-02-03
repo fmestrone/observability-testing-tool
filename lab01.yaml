@@ -55,6 +55,28 @@ loggingJobs:
       - name: "ip"
         dataSource: "someIpAddresses"
         selector: "any"
+  - frequency: "once"
+    jsonPayload:
+      {
+        "server": "yehb763gbsd",
+        "env": "qa",
+        "deployments": ["67br4", "7cbf3", "jf87e", "jcnhw", "pq9yq"],
+        "contacts":
+          {
+            "dev": "dev@gmail.co.uk",
+            "ops": "ops@gmail.co.uk",
+            "owner": "owner@gmail.co.uk",
+          }
+      }
+    level: INFO
+    resourceType: "gce_instance"
+    resourceLabels:
+      instance_id: "{vmId}"
+      zone: "{vmZone}"
+    variables:
+      - "vmId"
+      - name: "vmZone"
+        extractor: "/zones/([a-z0-9\\-]+)$"
 
 metricDescriptors:
   - name: "python_app_count"
