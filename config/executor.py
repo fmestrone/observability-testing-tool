@@ -32,6 +32,9 @@ def prepare():
             error_log("No config information was found. Is the file empty?")
             exit(1)
         prepare_config(_config)
+    except ValueError as e:
+        error_log(str(e))
+        exit(1)
     except Exception as e:
         error_log("There was an error parsing the configuration file", _config, e)
         exit(1)
@@ -345,7 +348,7 @@ def create_metrics_descriptors():
         sleep(0.01)
 
         project_id = metric_descriptor.get("projectId")
-        metric_type = metric_descriptor.get("type")
+        metric_type = metric_descriptor.get("metricType")
         metric_kind = metric_descriptor.get("metricKind")
         value_type = metric_descriptor.get("valueType")
         metric_name = metric_descriptor.get("name")
@@ -372,7 +375,7 @@ def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
     metric_type = job["metricType"]
     if vars_dict is None:
         metric_value = float(job["metricValue"])
-        metric_labels = job.get("metricLabels")
+        metric_labels = job.get("labels")
         resource_type = job.get("resourceType")
         resource_labels = job.get("resourceLabels")
         project_id = job.get("projectId")

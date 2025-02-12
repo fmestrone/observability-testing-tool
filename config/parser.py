@@ -1,7 +1,9 @@
+import json
 import random
 import re
 from os import getenv
 
+import jsonschema
 import yaml
 
 from datetime import timedelta
@@ -171,15 +173,18 @@ def configure_variables(entry: dict, logging_vars: dict):
 
 
 def parse_config(file: str = None) -> dict:
-    if file is None: file = "config.yaml" # makes it easier to pass None at point of call
+    with open('config.schema.json') as schema_file:
+        schema = json.load(schema_file)
+    if file is None: file = "config.obs.yaml" # makes it easier to pass None at point of call
     with open(file, 'r') as file:
         config = yaml.safe_load(file)
+    jsonschema.validate(config, schema)
     return config
 
 
 def prepare_config(config: dict):
     if config.get("dataSources") is None:
-        config["dataSources"] = []
+        config["dataSources"] = {}
     if config.get("loggingJobs") is None:
         config["loggingJobs"] = []
     if config.get("metricDescriptors") is None:
@@ -218,7 +223,10 @@ def configure_logging_job(logging_job: dict):
     logging_job["live"] = isinstance(logging_job.get("live"), bool) and logging_job["live"] == True
 
     if logging_job.get("logEntries") is None:
-        # TODO why not an empty array of entries?
+        # Why not an empty array of entries?
+        # Because that way there is always an entry into which the
+        # top-level configuration can simply be copied - so the application
+        # will always rely on at least having ONE entry
         logging_job["logEntries"] = [{}]
 
     if logging_job.get("variables") is None:
@@ -242,7 +250,10 @@ def configure_monitoring_job(monitoring_job: dict):
     monitoring_job["live"] = isinstance(monitoring_job.get("live"), bool) and monitoring_job["live"] == True
 
     if monitoring_job.get("metricEntries") is None:
-        # TODO why not an empty array of entries?
+        # Why not an empty array of entries?
+        # Because that way there is always an entry into which the
+        # top-level configuration can simply be copied - so the application
+        # will always rely on at least having ONE entry
         monitoring_job["metricEntries"] = [{}]
 
     if monitoring_job.get("variables") is None:

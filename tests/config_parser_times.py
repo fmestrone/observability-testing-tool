@@ -52,7 +52,7 @@ class TimeDeltaTests(unittest.TestCase):
         )
 
 
-    def test_negative_values_2(self):
+    def test_negative_values_2_spaces(self):
         result = parse_timedelta_value(" - 50s")
         self.assertEqual(
             -timedelta(seconds=50),

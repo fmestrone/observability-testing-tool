@@ -34,9 +34,10 @@ configurations are particularly useful when testing alerts and triggers.
 
 ## Setup
 
-- Make sure you are inside the top-level folder where the tool was downloaded
+- Clone the GIT project and make sure you are inside the top-level folder where the tool was downloaded
 
 ```bash
+git clone https://github.com/fmestrone/advanced-observability-testing-tool.git
 cd advanced-observability-testing-tool
 ```
 
@@ -55,8 +56,18 @@ pip install -r requirements.txt
 
 ## Google Cloud Setup
 
+If running the tool in the Cloud Shell, make sure that you are authorized
+to write logs and metrics (you must have the Logs Writer and Monitoring Metric Writer) 
+roles or equivalent permissions.
+
+If running the tool inside GCE or GKE, make sure that those roles (or
+equivalent permissions) are available to the identity running your
+tool on the environment.
+
+Alternatively, you can use service account keys:
+
 - Create a service account for the application in Google Cloud IAM
-- Add the Log Writer role to the service account
+- Add the Logs Writer role to the service account
 - Add the Monitoring Metric Writer role to the service account
 - Generate a new JSON key for the service account
 
@@ -89,12 +100,38 @@ You can use the following environment variables when running the tool
 `ADVOBS_NO_GCE_METADATA=True` disables execution of GCE metadata endpoint when outside a GCE VM instance
 `ADVOBS_DRY_RUN=True` executes the whole script without sending requests to Google Cloud, but logging to `stdout` instead
 
-## Configuration File
+## Getting Started
+
+The configuration file describes the jobs that will generate logs and metrics. Each
+**job** describes what and how many log entries or metrics values should be
+submitted to Google Cloud and with what frequency.
+
+A **logging job** specifies logging entries, while a **monitoring job** 
+specifies metrics. You can also provide a metric description to define
+new metrics before monitoring jobs submit time series values for them.
+
+When configuring your jobs and the values that they submit, you can also
+use **variables**. Variables are taken from the **data sources** that you can
+declare in your configuration.
+
+Let's take a look at a couple of examples - call these files `config.yaml` in
+the same folder where the tool is installed.
+
+```yaml
+loggingJobs:
+
+```
+
+
+### Configuration File Reference
+
+#### Google Cloud Settings
 
 - `cloudConfig` allows you to specify project and service account to use in Google Cloud.
   - `project` the Google Cloud project that the tool will run against.
   - `credentials` the Google Cloud service account key used to authenticate and authorize the tool to send logs and metrics.
 
+#### Data Sources
 
 - `dataSources[]` lists the sources of data that can be used when generating log entries
 or metric values. See the section on [data sources and variables](#data-sources-and-variables)
@@ -103,8 +140,9 @@ for more information.
   - `value` represents the value that the data source will offer, but its meaning depends on the type of data source.
   - `range` for "random"
 
+#### Logging Jobs
 
-- `loggingJobs`
+- `loggingJobs[]`
   - `live`
   - [timing](#timing-definition)
   - `textPayload` or `jsonPayload`
@@ -113,11 +151,13 @@ for more information.
     - one of `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, `NOTSET` for native Python logging
   - [variables](#variable-definition)`[]`
 
+#### Metric Descriptors
 
 - `metricDescriptors`
 
+#### Monitoring Jobs
 
-- `monitoringJobs`
+- `monitoringJobs[]`
   - `live`
   - [timing](#timing-definition)
   - [variables](#variable-definition)`[]`
@@ -130,11 +170,11 @@ for more information.
 - `endTime`
 - `endOffset`
 
-## Data Sources and Variables
+### Data Sources and Variables
 
-## Data Source Types
+#### Data Source Types
 
-### Variable Definition
+#### Variable Definition
 
 - `name`
 - `dataSource`

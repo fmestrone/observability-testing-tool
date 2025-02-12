@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nekosoft.org/advobstool/config.schema.json",
+  "$defs": {
+    "metadataProperties": {
+      "type": "object",
+      "properties": {
+        "live": { "type": "boolean" },
+        "resourceType": { "type": "string" },
+        "resourceLabels": { "type": "object" },
+        "labels": { "type": "object" }
+      }
+    },
+    "timingProperties": {
+      "type": "object",
+      "properties": {
+        "frequency": { "anyOf": [ { "const": "once" }, { "pattern": "^ *(-?) *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *$" } ] },
+        "startOffset": { "type": "string" },
+        "endOffset": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" }
+      }
+    },
+    "dataSourceProperties": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://nekosoft.org/advobstool/datasource.schema.json",
+      "title": "Observability Testing Tool Data Source",
+      "description": "The definition of a data source for variables in the Observability Testing Tool configuration",
+      "type": "object",
+      "required": [
+        "sourceType",
+        "value"
+      ],
+      "properties": {
+        "sourceType": {
+          "enum": [
+            "list",
+            "env",
+            "random",
+            "gce-metadata",
+            "fixed"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "list"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "env"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "random"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "enum": [
+                  "int",
+                  "float"
+                ]
+              },
+              "range": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "range"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "gce-metadata"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "fixed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "metricDescriptorProperties": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://nekosoft.org/advobstool/metricdescriptor.schema.json",
+      "title": "Observability Testing Tool Metric Descriptor",
+      "description": "The definition of a metric descriptor in the Observability Testing Tool configuration. This configuration is used in the executor#create_metric_descriptors.",
+      "type": "object",
+      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
+      "properties": {
+        "projectId": { "type": "string" },
+        "metricType": { "type": "string" },
+        "metricKind": { "type": "string" },
+        "valueType": { "type": "string" },
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" },
+        "displayName": { "type": "string" },
+        "launchStage": { "type": "string" },
+        "labels": { "type": "object" },
+        "variables": { "type": "object" },
+        "monitoredResourceTypes": { "type": "array" }
+      },
+      "additionalProperties": false
+    },
+    "variablesProperties": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://nekosoft.org/advobstool/variables.schema.json",
+      "title": "Observability Testing Tool Variables",
+      "description": "The definition of a metric descriptor in the Observability Testing Tool configuration. This configuration is used in the executor#create_metric_descriptors.",
+      "type": "object",
+      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
+      "properties": {
+        "projectId": { "type": "string" },
+        "metricType": { "type": "string" },
+        "metricKind": { "type": "string" },
+        "valueType": { "type": "string" },
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" },
+        "displayName": { "type": "string" },
+        "launchStage": { "type": "string" },
+        "labels": { "type": "object" },
+        "variables": { "type": "object" },
+        "monitoredResourceTypes": { "type": "array" }
+      },
+      "additionalProperties": false
+    },
+    "loggingProperties": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://nekosoft.org/advobstool/logentry.schema.json",
+      "title": "Observability Testing Tool Metric Descriptor",
+      "description": "The definition of a log entry in the Observability Testing Tool configuration. This configuration is used in executor#handle_logging_job.",
+      "type": "object",
+      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
+      "properties": {
+        "level": { "enum": [ "NOTSET", "DEFAULT", "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY" ] },
+        "other": { "type": "object" },
+        "logName": { "type": "string" },
+        "jsonPayload": { "type": "object" },
+        "textPayload": { "type": "string" },
+        "protoPayload": { "type": "object" }
+      },
+      "oneOf": [
+        { "required": [ "jsonPayload" ] },
+        { "required": [ "textPayload" ] },
+        { "required": [ "protoPayload" ] }
+      ],
+      "additionalProperties": false
+    },
+    "metricsProperties": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://nekosoft.org/advobstool/metricentry.schema.json",
+      "title": "Observability Testing Tool Metric Descriptor",
+      "description": "The definition of a metric descriptor in the Observability Testing Tool configuration. This configuration is used in the executor#create_metric_descriptors.",
+      "type": "object",
+      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
+      "properties": {
+        "projectId": { "type": "string" },
+        "metricType": { "type": "string" },
+        "metricKind": { "type": "string" },
+        "valueType": { "type": "string" },
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" },
+        "displayName": { "type": "string" },
+        "launchStage": { "type": "string" },
+        "labels": { "type": "object" },
+        "variables": { "type": "object" },
+        "monitoredResourceTypes": { "type": "array" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "title": "Advanced Observability Testing Tool",
+  "description": "The YAML configuration file for the Advanced Observability Testing Tool for Google Cloud",
+  "type": "object",
+  "properties": {
+    "dataSources": {
+      "description": "A dictionary of names to sources of data for variables used in this configuration",
+      "type": "object",
+      "allOf": [ { "$ref": "#/$defs/dataSourceProperties" } ]
+    },
+    "metricDescriptors": {
+      "description": "A list of descriptors for the metrics submitted in this configuration",
+      "type": "array",
+      "items": { "$ref": "#/$defs/metricDescriptorProperties" }
+    },
+    "loggingJobs": {
+      "description": "A list of logging jobs to be executed by this configuration.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [ "live" ],
+        "allOf": [
+          { "$ref": "#/$defs/timingProperties" },
+          { "$ref": "#/$defs/metadataProperties" },
+          {
+            "properties": {
+              "variables": {
+                "$ref": "#/$defs/variablesProperties"
+              },
+              "logEntries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/loggingProperties"
+                }
+              }
+            }
+          }
+        ]
+            }
+          },
+    "monitoringJobs": {
+      "description": "A list of monitoring jobs to be executed by this configuration.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [ "live" ],
+        "allOf": [
+          { "$ref": "#/$defs/timingProperties" },
+          { "$ref": "#/$defs/metadataProperties" },
+          {
+            "properties": {
+              "variables": {
+                "$ref": "#/$defs/variablesProperties"
+              },
+              "metricEntries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/metricsProperties"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "anyOf": [
+    { "required": [ "loggingJobs" ] },
+    { "required": [ "monitoringJobs" ] }
+  ],
+  "additionalProperties": false
+}
