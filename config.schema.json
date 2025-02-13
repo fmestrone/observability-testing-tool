@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://nekosoft.org/advobstool/config.schema.json",
+  "$id": "https://nekosoft.org/obstool/config.schema.json",
   "$defs": {
     "timeDurationFrequencyPattern": {
       "description": "A pattern that checks a frequency or duration definition, either single value (e.g. 15s, 3m, 2d) or as a from/to range (e.g. 15s~30s, 3m~2h, 6h~2d) - it will be up to the application to confirm suitability in the context - this is parsed in parser#parse_timedelta_value and parser#parse_timedelta_interval",

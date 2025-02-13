@@ -1,4 +1,4 @@
-# Observability Testing Tool for Google Cloud
+# [Observability Testing Tool for Google Cloud](README.md)
 
 ## Setup
 
@@ -56,21 +56,21 @@ If a file is not specified, the tool will look for `config.obs.yaml` in the curr
 
 You can use the following environment variables when running the tool
 
-- `ADVOBS_DEBUG=n` enables more detailed logging to stdout
+- `OBSTOOL_DEBUG=n` enables more detailed logging to stdout
   - 0 means no logging apart from errors
   - 1 means INFO logs
   - 2 means DEBUG logs
 
-- `ADVOBS_NO_GCE_METADATA=True` disables execution of GCE metadata endpoint when outside a GCE VM instance
+- `OBSTOOL_NO_GCE_METADATA=True` disables execution of GCE metadata endpoint when outside a GCE VM instance
 
-- `ADVOBS_DRY_RUN=True` executes the whole script without sending requests to Google Cloud, but logging to `stdout` instead - note that this also implies `ADVOBS_NO_GCE_METADATA=True`, so metadata will not be queried in dry-run mode.
+- `OBSTOOL_DRY_RUN=True` executes the whole script without sending requests to Google Cloud, but logging to `stdout` instead - note that this also implies `OBSTOOL_NO_GCE_METADATA=True`, so metadata will not be queried in dry-run mode.
 
 For example,
 
 ```shell
-ADVOBS_DEBUG=2 python main.py config.obs.yaml
+OBSTOOL_DEBUG=2 python main.py config.obs.yaml
 ```
 
 ```shell
-ADVOBS_DEBUG=1 ADVOBS_DRY_RUN=True python main.py config.obs.yaml
+OBSTOOL_DEBUG=1 OBSTOOL_DRY_RUN=True python main.py config.obs.yaml
 ```

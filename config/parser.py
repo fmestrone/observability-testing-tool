@@ -11,7 +11,7 @@ from datetime import datetime
 
 import requests
 
-__ADVOBS_NO_GCE_METADATA = (getenv("ADVOBS_NO_GCE_METADATA") == "True" or getenv("ADVOBS_DRY_RUN") == "True")
+__OBSTOOL_NO_GCE_METADATA = (getenv("OBSTOOL_NO_GCE_METADATA") == "True" or getenv("OBSTOOL_DRY_RUN") == "True")
 
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
@@ -216,7 +216,7 @@ def prepare_config(config: dict):
 def get_gce_metadata(metadata_key: str) -> str:
     # This will only work from inside a GCE instance
     # See https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys
-    if __ADVOBS_NO_GCE_METADATA: return "NA"
+    if __OBSTOOL_NO_GCE_METADATA: return "NA"
     metadata_server = "http://metadata.google.internal/computeMetadata/v1/"
     metadata_flavor = {"Metadata-Flavor" : "Google"}
     return requests.get(metadata_server + metadata_key, headers = metadata_flavor).text

@@ -9,7 +9,7 @@ from logging import getLevelName
 
 from google.cloud.logging_v2 import Resource
 
-__ADVOBS_DRY_RUN = (getenv("ADVOBS_DRY_RUN") == "True")
+__OBSTOOL_DRY_RUN = (getenv("OBSTOOL_DRY_RUN") == "True")
 
 _regex_logname_format = re.compile(r"^projects/.+/logs/.+$")
 
@@ -18,15 +18,15 @@ usePythonLogging = False
 logger = None
 
 def setup_logging_client():
-    if __ADVOBS_DRY_RUN: return
+    if __OBSTOOL_DRY_RUN: return
     global loggingClient, logger
     loggingClient = google.cloud.logging.Client()
     if usePythonLogging:
         loggingClient.setup_logging(log_level=logging.DEBUG)
-        logger = logging.getLogger("googlecloud_adv_obs_logger")
+        logger = logging.getLogger("obs_test_tool_logger")
         logger.addFilter(TimestampFilter())
     else:
-        logger = loggingClient.logger("googlecloud_adv_obs_logger")
+        logger = loggingClient.logger("obs_test_tool_logger")
 
 
 class TimestampFilter(logging.Filter):
@@ -76,7 +76,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
         if when is not None:
             extra["logger__timestamp"] = when.timestamp()
 
-        if not __ADVOBS_DRY_RUN:
+        if not __OBSTOOL_DRY_RUN:
             logger.log(getLevelName(level), message, extra=extra)
 
     else:
@@ -90,7 +90,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
 
         if log_name is None:
             log_name = "python"
-        if not __ADVOBS_DRY_RUN and not _regex_logname_format.match(log_name):
+        if not __OBSTOOL_DRY_RUN and not _regex_logname_format.match(log_name):
             log_name = f"projects/{logger.project}/logs/{log_name}"
 
         metadata = {
@@ -104,7 +104,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
             ),
             **other
         }
-        if not __ADVOBS_DRY_RUN:
+        if not __OBSTOOL_DRY_RUN:
             match payloadStyle:
                 case "json":
                     logger.log_struct(message, **metadata)

@@ -7,14 +7,14 @@ import datetime
 
 from os import getenv
 
-__ADVOBS_DRY_RUN = (getenv("ADVOBS_DRY_RUN") == "True")
+__OBSTOOL_DRY_RUN = (getenv("OBSTOOL_DRY_RUN") == "True")
 
 
 monitoringClient = None
 
 
 def setup_monitoring_client():
-    if __ADVOBS_DRY_RUN: return
+    if __OBSTOOL_DRY_RUN: return
     global monitoringClient
     monitoringClient = monitoring_v3.MetricServiceClient()
 
@@ -72,7 +72,7 @@ def submit_metric(value: float, metric_type, interval, project_id = None, metric
     # Submit the time series data
     project_name = f"projects/{project_id if project_id is not None else getenv('GOOGLE_CLOUD_PROJECT')}"
 
-    if not __ADVOBS_DRY_RUN:
+    if not __OBSTOOL_DRY_RUN:
         monitoringClient.create_time_series(request={"name": project_name, "time_series": [series]})
 
 
@@ -84,7 +84,7 @@ def submit_metric_descriptor(metric_type, kind, value_type, name = None, project
     descriptor.type = f"custom.googleapis.com/{metric_type}"
 
     try:
-        if __ADVOBS_DRY_RUN:
+        if __OBSTOOL_DRY_RUN:
             raise google.api_core.exceptions.NotFound("Dry Running")
         else:
             descriptor_path = monitoringClient.metric_descriptor_path(project_id, descriptor.type)
@@ -112,7 +112,7 @@ def submit_metric_descriptor(metric_type, kind, value_type, name = None, project
 
         project_name = f"projects/{project_id}"
 
-        if not __ADVOBS_DRY_RUN:
+        if not __OBSTOOL_DRY_RUN:
             monitoringClient.create_metric_descriptor(
                 name=project_name, metric_descriptor=descriptor
             )
