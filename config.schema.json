@@ -37,7 +37,9 @@
       "properties": {
         "sourceType": {
           "enum": [ "list", "env", "random", "gce-metadata", "fixed" ]
-        }
+        },
+        "value": { },
+        "range": { }
       },
       "allOf": [
         {
@@ -179,20 +181,32 @@
             "name": { "type": "string" },
             "extractor": { "type": "string" },
             "dataSource": { "type": "string" },
-            "selector": { "enum": [ "any", "first", "last", "all" ] }
-          },
+            "selector": {
+              "oneOf": [
+                { "enum": [ "any", "first", "last", "all" ] },
+                { "type": "number" }
+              ]
+            }
+           },
           "required": ["name"],
           "additionalProperties": false
         }
-      ],
-      "additionalProperties": false
+      ]
+    },
+    "interpolatedProperty": {
+      "description": "Pattern to excludes checks from property values that contain an interpolated value",
+      "pattern": "\\{[^{}]+\\}"
     },
     "loggingProperties": {
       "description": "The definition of a log entry. This configuration is used in executor#handle_logging_job()",
       "type": "object",
-      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
       "properties": {
-        "level": { "enum": [ "NOTSET", "DEFAULT", "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY" ] },
+        "level": {
+          "oneOf": [
+            { "$ref": "#/$defs/interpolatedProperty" },
+            { "enum": [ "NOTSET", "DEFAULT", "DEBUG", "INFO", "NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY" ] }
+          ]
+        },
         "other": { "type": "object" },
         "logName": { "type": "string" },
         "jsonPayload": { "type": "object" },
@@ -204,18 +218,11 @@
             "$ref": "#/$defs/variablesProperties"
           }
         }
-      },
-      "oneOf": [
-        { "required": [ "jsonPayload" ] },
-        { "required": [ "textPayload" ] },
-        { "required": [ "protoPayload" ] }
-      ],
-      "additionalProperties": false
+      }
     },
     "metricsProperties": {
       "description": "The definition of a metric entry. This configuration is used in executor#handle_monitoring_job()",
       "type": "object",
-      "required": [ "projectId", "metricType", "metricValue" ],
       "properties": {
         "projectId": { "type": "string" },
         "metricType": { "type": "string" },
@@ -234,8 +241,7 @@
           }
         },
         "monitoredResourceTypes": { "type": "array" }
-      },
-      "additionalProperties": false
+      }
     }
   },
   "title": "Advanced Observability Testing Tool",
@@ -250,7 +256,9 @@
     "metricDescriptors": {
       "description": "A list of descriptors for the metrics submitted in this configuration",
       "type": "array",
-      "items": { "$ref": "#/$defs/metricDescriptorProperties" }
+      "items": {
+        "$ref": "#/$defs/metricDescriptorProperties"
+      }
     },
     "loggingJobs": {
       "description": "A list of logging jobs to be executed by this configuration.",
@@ -260,24 +268,21 @@
         "allOf": [
           { "$ref": "#/$defs/timingProperties" },
           { "$ref": "#/$defs/metadataProperties" },
-          { "$ref": "#/$defs/loggingProperties" },
-          {
-            "properties": {
-              "live": { "type": "boolean" },
-              "logEntries": {
-                "type": "array",
-                "items": {
-                  "allOf": [
-                    { "$ref": "#/$defs/timingProperties" },
-                    { "$ref": "#/$defs/metadataProperties" },
-                    { "$ref": "#/$defs/loggingProperties" }
-                  ]
-                }
-              }
+          { "$ref": "#/$defs/loggingProperties" }
+        ],
+        "properties": {
+          "live": { "type": "boolean" },
+          "logEntries": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                { "$ref": "#/$defs/timingProperties" },
+                { "$ref": "#/$defs/metadataProperties" },
+                { "$ref": "#/$defs/loggingProperties" }
+              ]
             }
           }
-        ],
-        "additionalProperties": false
+        }
       }
     },
     "monitoringJobs": {
@@ -304,8 +309,7 @@
               }
             }
           }
-        ],
-        "additionalProperties": false
+        ]
       }
     }
   },

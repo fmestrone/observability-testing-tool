@@ -277,7 +277,7 @@ def configure_monitoring_job(monitoring_job: dict):
 
 
 def configure_data_source(data_source: dict):
-    data_source_type = data_source.get("type")
+    data_source_type = data_source.get("sourceType")
     if data_source_type is None or data_source_type not in _datasource_types:
         raise RuntimeError("Data source type '{}' not supported".format(data_source_type))
     else:

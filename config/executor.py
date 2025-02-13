@@ -104,7 +104,7 @@ def expand_variables(variables: list, data_sources: dict) -> dict | None:
             raise ValueError(f"Data source for '{var_name}' does not exist")
 
         data_source_value = data_source["value"]
-        match data_source["type"]:
+        match data_source["sourceType"]:
             case "list":
                 var_list_selector = var_config.get("selector", "any")
                 variables_expanded[var_name] = expand_list_variable(var_list_selector, data_source_value)
