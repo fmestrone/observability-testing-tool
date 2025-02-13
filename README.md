@@ -18,23 +18,22 @@ metrics used in the lab exercises.
   for Cloud Monitoring, as well as testing notifications and alerting conditions. 
 
 
-It can generate historical logs and metrics as well as **live logs and metrics**.
+It can generate historical logs and metrics as well as live logs and metrics.
 
 **Historical logs and metrics** are generated at a given frequency in bulk given
 a start point and end point in time.
 The timestamps of historical logs are limited to 30 days in the past and 1 day in the future (this is due
-to [Google Logging infrastructure quotas and limits](https://cloud.google.com/logging/quotas#log-limits)). As far as the timestamps of historical metrics,
-they are limited to max 25 hours in the past and 5 minutes in the future (also
+to [Google Logging infrastructure quotas and limits](https://cloud.google.com/logging/quotas#log-limits)). As far as the timestamps of historical metrics go, they are limited to max 25 hours in the past and 5 minutes in the future (also
 due to [Google Monitoring infrastructure limits](https://cloud.google.com/monitoring/custom-metrics/creating-metrics#writing-ts)).
 
 **Live logs and metrics** are instead generated between a given start point and end 
-point in time at the specified frequency, but they are generated at the time when 
-they are due to be sent and sent with the actual timestamp of when they are sent. Live 
+point in time in the future at the specified frequency, but they are generated at the time when 
+they are due to be sent and will bear the timestamp of generation. Live 
 configurations are particularly useful when testing alerts and triggers.
 
 ## Setup
 
-- Clone the GIT project and make sure you are inside the top-level folder where the tool was downloaded
+- Clone the Git project and make sure you are inside the top-level folder where the tool was downloaded
 
 ```bash
 git clone https://github.com/fmestrone/advanced-observability-testing-tool.git
@@ -57,12 +56,12 @@ pip install -r requirements.txt
 ## Google Cloud Setup
 
 If running the tool in the Cloud Shell, make sure that you are authorized
-to write logs and metrics (you must have the Logs Writer and Monitoring Metric Writer) 
-roles or equivalent permissions.
+to write logs and metrics (you must have the Logs Writer and Monitoring Metric Writer 
+roles or equivalent permissions).
 
 If running the tool inside GCE or GKE, make sure that those roles (or
 equivalent permissions) are available to the identity running your
-tool on the environment.
+GCE instance on the environment.
 
 Alternatively, you can use service account keys:
 
@@ -70,11 +69,6 @@ Alternatively, you can use service account keys:
 - Add the Logs Writer role to the service account
 - Add the Monitoring Metric Writer role to the service account
 - Generate a new JSON key for the service account
-
-> [!TIP]
-> The following two steps are not need if you set the `cloudConfig.project` and 
-> `cloudConfig.credentials` properties in the configuration file for the tool.
-
 - Configure the client library project with the `GOOGLE_CLOUD_PROJECT` environment variable
 - Make the key available to the application with the `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 
