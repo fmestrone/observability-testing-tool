@@ -244,10 +244,19 @@
       }
     }
   },
-  "title": "Advanced Observability Testing Tool",
-  "description": "The YAML configuration file for the Advanced Observability Testing Tool for Google Cloud",
+  "title": "Observability Testing Tool",
+  "description": "The YAML configuration file for the Observability Testing Tool for Google Cloud",
   "type": "object",
   "properties": {
+    "cloudConfig": {
+      "description": "Allows the Google Cloud client library environment variables to set in the configuration instead of in the process",
+      "type": "object",
+      "properties": {
+        "project": { "type": "string" },
+        "credentials": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
     "dataSources": {
       "description": "A dictionary of names to sources of data for variables used in this configuration",
       "type": "object",
