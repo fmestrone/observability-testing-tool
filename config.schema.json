@@ -2,44 +2,41 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nekosoft.org/advobstool/config.schema.json",
   "$defs": {
+    "timeDurationFrequencyPattern": {
+      "description": "A pattern that checks a frequency or duration definition, either single value (e.g. 15s, 3m, 2d) or as a from/to range (e.g. 15s~30s, 3m~2h, 6h~2d) - it will be up to the application to confirm suitability in the context - this is parsed in parser#parse_timedelta_value and parser#parse_timedelta_interval",
+      "pattern": "^ *-? *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *(~ *(-?) *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *)?$"
+    },
+    "numericPattern": {
+      "description": "A pattern that checks an integer or float definition, either single value (e.g. 4.5, 3, -12) or as a from/to/step range (e.g. 15~3~2, 30~60, -12.5~12.5) - it will be up to the application to confirm suitability in the context - this is parsed in parser#parse_int_range() and parser#parse_float_range",
+      "pattern": "^ *-? *[.\\d]+? *(~ *-? *[.\\d]+? *(~ *-? *[.\\d]+? *)?)?$"
+    },
     "metadataProperties": {
+      "description": "The definition of a an entry metadata.",
       "type": "object",
       "properties": {
-        "live": { "type": "boolean" },
         "resourceType": { "type": "string" },
         "resourceLabels": { "type": "object" },
         "labels": { "type": "object" }
       }
     },
     "timingProperties": {
+      "description": "The definition of a job timing. This is parsed in parser#configure_entry_timings() and handled in executor#_run_live_jobs(), executor#_handle_live_job(), executor#_run_batch_jobs()",
       "type": "object",
       "properties": {
-        "frequency": { "anyOf": [ { "const": "once" }, { "pattern": "^ *(-?) *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *$" } ] },
-        "startOffset": { "type": "string" },
-        "endOffset": { "type": "string" },
-        "startTime": { "type": "string" },
-        "endTime": { "type": "string" }
+        "frequency": { "anyOf": [ { "const": "once" }, { "$ref": "#/$defs/timeDurationFrequencyPattern" } ] },
+        "startOffset": { "$ref": "#/$defs/timeDurationFrequencyPattern" },
+        "endOffset": { "$ref": "#/$defs/timeDurationFrequencyPattern" },
+        "startTime": { "format": "date-time" },
+        "endTime": { "format": "date-time" }
       }
     },
     "dataSourceProperties": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://nekosoft.org/advobstool/datasource.schema.json",
-      "title": "Observability Testing Tool Data Source",
-      "description": "The definition of a data source for variables in the Observability Testing Tool configuration",
+      "description": "The definition of a data source for variables.",
       "type": "object",
-      "required": [
-        "sourceType",
-        "value"
-      ],
+      "required": [ "sourceType", "value" ],
       "properties": {
         "sourceType": {
-          "enum": [
-            "list",
-            "env",
-            "random",
-            "gce-metadata",
-            "fixed"
-          ]
+          "enum": [ "list", "env", "random", "gce-metadata", "fixed" ]
         }
       },
       "allOf": [
@@ -92,7 +89,7 @@
                 ]
               },
               "range": {
-                "type": "string"
+                "$ref": "#/$defs/numericPattern"
               }
             },
             "required": [
@@ -136,10 +133,7 @@
       "additionalProperties": false
     },
     "metricDescriptorProperties": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://nekosoft.org/advobstool/metricdescriptor.schema.json",
-      "title": "Observability Testing Tool Metric Descriptor",
-      "description": "The definition of a metric descriptor in the Observability Testing Tool configuration. This configuration is used in the executor#create_metric_descriptors.",
+      "description": "The definition of a metric descriptor. This configuration is used in executor#create_metric_descriptors()",
       "type": "object",
       "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
       "properties": {
@@ -152,40 +146,49 @@
         "description": { "type": "string" },
         "displayName": { "type": "string" },
         "launchStage": { "type": "string" },
-        "labels": { "type": "object" },
-        "variables": { "type": "object" },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string"},
+              "valueType": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variablesProperties"
+          }
+        },
         "monitoredResourceTypes": { "type": "array" }
       },
       "additionalProperties": false
     },
     "variablesProperties": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://nekosoft.org/advobstool/variables.schema.json",
-      "title": "Observability Testing Tool Variables",
-      "description": "The definition of a metric descriptor in the Observability Testing Tool configuration. This configuration is used in the executor#create_metric_descriptors.",
-      "type": "object",
-      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
-      "properties": {
-        "projectId": { "type": "string" },
-        "metricType": { "type": "string" },
-        "metricKind": { "type": "string" },
-        "valueType": { "type": "string" },
-        "name": { "type": "string" },
-        "unit": { "type": "string" },
-        "description": { "type": "string" },
-        "displayName": { "type": "string" },
-        "launchStage": { "type": "string" },
-        "labels": { "type": "object" },
-        "variables": { "type": "object" },
-        "monitoredResourceTypes": { "type": "array" }
-      },
+      "description": "The definition of variables. They are parsed in parser#configure_variables() and handled in executor#expand_variables(), executor#expand_list_variable()",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "extractor": { "type": "string" },
+            "dataSource": { "type": "string" },
+            "selector": { "enum": [ "any", "first", "last", "all" ] }
+          },
+          "required": ["name"],
+          "additionalProperties": false
+        }
+      ],
       "additionalProperties": false
     },
     "loggingProperties": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://nekosoft.org/advobstool/logentry.schema.json",
-      "title": "Observability Testing Tool Metric Descriptor",
-      "description": "The definition of a log entry in the Observability Testing Tool configuration. This configuration is used in executor#handle_logging_job.",
+      "description": "The definition of a log entry. This configuration is used in executor#handle_logging_job()",
       "type": "object",
       "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
       "properties": {
@@ -194,7 +197,13 @@
         "logName": { "type": "string" },
         "jsonPayload": { "type": "object" },
         "textPayload": { "type": "string" },
-        "protoPayload": { "type": "object" }
+        "protoPayload": { "type": "object" },
+        "variables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variablesProperties"
+          }
+        }
       },
       "oneOf": [
         { "required": [ "jsonPayload" ] },
@@ -204,24 +213,26 @@
       "additionalProperties": false
     },
     "metricsProperties": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://nekosoft.org/advobstool/metricentry.schema.json",
-      "title": "Observability Testing Tool Metric Descriptor",
-      "description": "The definition of a metric descriptor in the Observability Testing Tool configuration. This configuration is used in the executor#create_metric_descriptors.",
+      "description": "The definition of a metric entry. This configuration is used in executor#handle_monitoring_job()",
       "type": "object",
-      "required": [ "projectId", "metricType", "metricKind", "valueType", "name" ],
+      "required": [ "projectId", "metricType", "metricValue" ],
       "properties": {
         "projectId": { "type": "string" },
         "metricType": { "type": "string" },
         "metricKind": { "type": "string" },
+        "metricValue": { "type": "string" },
         "valueType": { "type": "string" },
         "name": { "type": "string" },
         "unit": { "type": "string" },
         "description": { "type": "string" },
         "displayName": { "type": "string" },
         "launchStage": { "type": "string" },
-        "labels": { "type": "object" },
-        "variables": { "type": "object" },
+        "variables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variablesProperties"
+          }
+        },
         "monitoredResourceTypes": { "type": "array" }
       },
       "additionalProperties": false
@@ -234,7 +245,7 @@
     "dataSources": {
       "description": "A dictionary of names to sources of data for variables used in this configuration",
       "type": "object",
-      "allOf": [ { "$ref": "#/$defs/dataSourceProperties" } ]
+      "additionalProperties": { "$ref": "#/$defs/dataSourceProperties" }
     },
     "metricDescriptors": {
       "description": "A list of descriptors for the metrics submitted in this configuration",
@@ -246,49 +257,55 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [ "live" ],
         "allOf": [
           { "$ref": "#/$defs/timingProperties" },
           { "$ref": "#/$defs/metadataProperties" },
+          { "$ref": "#/$defs/loggingProperties" },
           {
             "properties": {
-              "variables": {
-                "$ref": "#/$defs/variablesProperties"
-              },
+              "live": { "type": "boolean" },
               "logEntries": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/loggingProperties"
+                  "allOf": [
+                    { "$ref": "#/$defs/timingProperties" },
+                    { "$ref": "#/$defs/metadataProperties" },
+                    { "$ref": "#/$defs/loggingProperties" }
+                  ]
                 }
               }
             }
           }
-        ]
-            }
-          },
+        ],
+        "additionalProperties": false
+      }
+    },
     "monitoringJobs": {
       "description": "A list of monitoring jobs to be executed by this configuration.",
       "type": "array",
       "items": {
         "type": "object",
-        "required": [ "live" ],
         "allOf": [
           { "$ref": "#/$defs/timingProperties" },
           { "$ref": "#/$defs/metadataProperties" },
+          { "$ref": "#/$defs/metricsProperties" },
           {
             "properties": {
-              "variables": {
-                "$ref": "#/$defs/variablesProperties"
-              },
+              "live": { "type": "boolean" },
               "metricEntries": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/metricsProperties"
+                  "allOf": [
+                    { "$ref": "#/$defs/timingProperties" },
+                    { "$ref": "#/$defs/metadataProperties" },
+                    { "$ref": "#/$defs/metricsProperties" }
+                  ]
                 }
               }
             }
           }
-        ]
+        ],
+        "additionalProperties": false
       }
     }
   },

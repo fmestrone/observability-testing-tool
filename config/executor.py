@@ -56,6 +56,7 @@ def expand_list_variable(selector, value):
     # E.g. range: 5-9, selector: any = random value from sublist/slice
     # E.g. range: None, selector: all = the full list
     # E.g. range: 5-9, selector: all = the entire sublist/slice
+    # In this case range would have to be ALSO at the variable level, used for a list
 
     if selector == "any":
         return random.choice(value)
@@ -70,6 +71,7 @@ def expand_list_variable(selector, value):
             return value[int(selector)]
         except ValueError:
             raise ValueError(f"Variable '{value}' uses an invalid list selector '{selector}'")
+
 
 _regex_var_name_index = re.compile(r'^(?P<name>.+?)(\[(?P<index>.+)])?$')
 

@@ -166,10 +166,13 @@ def _get_variable_name(var_config: dict | str):
         raise ValueError("Variable config must be dict or str")
 
 
-def configure_variables(entry: dict, logging_vars: dict):
-    entry_vars = {_get_variable_name(var): var for var in entry.get("variables", [])}
+def configure_variables(entry_config: dict, logging_vars: dict):
+    # Take the variables in every entry configuration and merge them with the variables in the job configuration
+    # Turn the dictionary of variables into a list of variables
+    # Updating should make sure no duplicate variables remain in the final list
+    entry_vars = {_get_variable_name(var): var for var in entry_config.get("variables", [])}
     entry_vars.update(logging_vars)
-    entry["variables"] = [var for var in entry_vars.values()]
+    entry_config["variables"] = [var for var in entry_vars.values()]
 
 
 def parse_config(file: str = None) -> dict:

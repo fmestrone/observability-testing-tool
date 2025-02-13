@@ -122,7 +122,6 @@ loggingJobs:
 
 ```
 
-
 ### Configuration File Reference
 
 #### Google Cloud Settings
