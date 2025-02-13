@@ -56,10 +56,10 @@ If a file is not specified, the tool will look for `config.obs.yaml` in the curr
 
 You can use the following environment variables when running the tool
 
-- `OBSTOOL_DEBUG=n` enables more detailed logging to stdout
-  - 0 means no logging apart from errors
-  - 1 means INFO logs
-  - 2 means DEBUG logs
+- `OBSTOOL_DEBUG=n` enables more detailed logging to `stdout`
+  - `0` means no logging apart from errors
+  - `1` means `INFO` logs and errors
+  - `2` means `DEBUG`, `INFO` and error logs
 
 - `OBSTOOL_NO_GCE_METADATA=True` disables execution of GCE metadata endpoint when outside a GCE VM instance
 
