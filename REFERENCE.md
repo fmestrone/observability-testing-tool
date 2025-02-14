@@ -1,4 +1,7 @@
-# [Observability Testing Tool for Google Cloud](README.md)
+# Observability Testing Tool for Google Cloud <sup>[📖](README.md)</sup>
+
+> ⚠️ **Work in Progress**  
+> This section is still being written. Check back soon for a complete reference on all configuration options!  
 
 ## Configuration File Reference
 

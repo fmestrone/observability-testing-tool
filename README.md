@@ -1,43 +1,61 @@
-# Observability Testing Tool for Google Cloud
+# Observability Testing Tool for Google Cloud  
 
-A Python script to generate large quantities of log entries and metrics into
-the Google Cloud Observability Suite. It can be used for
+Easily generate bulk logs and metrics in Google Cloud Operations Suite to test alerts, validate queries, and simulate real-world observability scenarios.  
 
-- **Training and education**
+## 🚀 Use Cases  
+
+This Python-based tool is designed for:  
+
+### **Training & Education**  
+Successfully used in the _Advanced Observability Querying in Google Cloud_ course, it helps create logs and metrics for hands-on labs and classroom demos.  
+
+### **Testing & Validation**  
+
+Use it to:  
+
+- Simulate logs and metrics when testing expressions for Logs Explorer with **Logging Query Language** (LQL), for **Log Analytics** with SQL, and for Cloud Monitoring with **PromQL**.
+
+- Generate real-time live data to test Cloud Monitoring **alerts and notifications**. 
+
+---
+
+## ⚡ Generate Historical or Live Data  
+
+The tool supports two data generation modes, that can be mixed within the same run.
+
+### 📜 **Historical Logs & Metrics**  
+
+- Bulk-generate logs and metrics for a past time window.  
+
+
+- **Limits:**  
+  - _Google Cloud quotas apply: [Logging Limits](https://cloud.google.com/logging/quotas#log-limits), [Monitoring Limits](https://cloud.google.com/monitoring/custom-metrics/creating-metrics#writing-ts)_.
   
-  It was successfully used in the _Advanced
-Observability Querying in Google Cloud_ course in order to create the logs and
-metrics used in the lab exercises.
+  - Logs: Up to **30 days in the past** and **1 day in the future**.  
 
-- **Testing**
+  - Metrics: Up to **25 hours in the past** and **5 minutes in the future**.  
   
-  It could be used to generate logs and metrics when testing expressions in LQL
-  (Logging Query Language) for Logs Explorer, SQL for Log Analytics, and PromQL
-  for Cloud Monitoring, as well as for generating live metrics and logs to test 
-  Cloud Monitoring alerts and notifications. 
 
-It can generate historical logs and metrics as well as live logs and metrics.
+### ⏳ **Live Logs & Metrics**  
 
-**Historical logs and metrics** are generated at a given frequency in bulk given
-a start point and end point in time.
-The timestamps of historical logs are limited to 30 days in the past and 1 day in the future (this is due
-to [Google Logging infrastructure quotas and limits](https://cloud.google.com/logging/quotas#log-limits)). As far as the timestamps of historical metrics go, they are limited to max 25 hours in the past and 5 minutes in the future (also
-due to [Google Monitoring infrastructure limits](https://cloud.google.com/monitoring/custom-metrics/creating-metrics#writing-ts)).
+- Continuously generate logs and metrics between a **future start and end time**.
 
-**Live logs and metrics** are instead generated between a given start point and end 
-point in the future at the specified frequency. The application will keep on running until the 
-given end time and generate logs and metrics live as specified at the configured intervals. 
-This is particularly useful when testing alert and notification triggers.
+- The tool runs **until the specified end time**, creating data at the configured intervals.  
 
-## Set-up and Execution
+- **Ideal for testing alerts and notifications** in real-time.  
 
-- For set-up information and how to run the tool, [read here](SETUP.md).
+---
 
-## Getting Started
+## 📖 Documentation  
 
-- For a guide on how to start using the tool quickly, [read here](GETSTARTED.md).
+🔹 **[Set Up & Install](SETUP.md)** – Installation guide.  
+🔹 **[Quick Start](START.md)** – Jump into usage examples.  
+🔹 **[Configuration Reference](REFERENCE.md)** – Full list of options.  
 
-## Configuration Reference
+---
 
-- For a full reference to the configuration options, [read here](REFERENCE.md).
+### 🛠 Contributing 
 
+Feel free to open an issue or submit a PR if you have ideas for improvement!  
+
+---
