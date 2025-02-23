@@ -22,6 +22,9 @@ Although primarily for internal use, it is publicly accessible.
 🔹 Package the tool for **easier installation via PIP**.  
 🔹 If possible, provide an **executable** to minimize setup effort.  
 
+### ➤ **Add a fallback property for GCE metadata data source**  
+🔹 When running without metadata connection () or in dry-run mode (`OBSTOOL_DRY_RUN=True`), this property allows to specify a fallback value to provide.
+
 ---
 
 ## 🚧 In Progress  

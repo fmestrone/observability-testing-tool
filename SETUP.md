@@ -1,6 +1,6 @@
 # Observability Testing Tool for Google Cloud <sup>[📖](README.md)</sup>
 
-## ⚙️ Setup  
+## ⚙️ Setup
 
 ### 1️⃣ Clone the Repository
 
@@ -89,9 +89,9 @@ Enable different log levels for troubleshooting:
 
 - `OBSTOOL_NO_GCE_METADATA=True` → Disables GCE metadata API checks (useful outside GCE)  
 - `OBSTOOL_DRY_RUN=True` → Simulates execution without sending logs/metrics to Google Cloud  
-  - _(Also implies `OBSTOOL_NO_GCE_METADATA=True`, so no metadata queries occur in dry-run mode)_.  
+  - _(Also implies `OBSTOOL_NO_GCE_METADATA=True`, so no metadata requests are sent in dry-run mode)_.  
 
-#### ✅ Example Usage:  
+#### ✅ Example Usage:
 
 ```bash
 OBSTOOL_DEBUG=2 python main.py config.obs.yaml
