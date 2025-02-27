@@ -1,0 +1,39 @@
+[build-system]
+# build dependencies, installed in a temporary environment during build only
+requires = ["setuptools"]
+# build system for packaging the project
+build-backend = "setuptools.build_meta"
+
+[project]
+# project metadata and requirements
+name = "observability-testing-tool"
+version = "1.0.0"
+requires-python = ">= 3.12"
+# dependencies for the project
+# (can replace requirements.txt file)
+dependencies = [
+    "google-cloud-logging==3.11.4",
+    "google-cloud-monitoring==2.26.0",
+    "pyyaml==6.0.2",
+    "jsonschema==4.23.0"
+]
+
+[project.optional-dependencies]
+# build dependencies, must be installed in your venv with
+# pip install -e .[build]
+build = ["twine", "build"]
+
+[project.scripts]
+# obs-tool is the CLI executable that will run
+# the main() method in the observability_testing_tool.main module
+obs-tool = "observability_testing_tool.main:main"
+
+[project.urls]
+# Links about the project
+Homepage = "https://github.com/fmestrone/observability-testing-tool"
+
+[tool.setuptools]
+# Directories where source files are to be found
+package-dir = {"" = "src"}
+# Resource files to include in the project package
+package-data = {"observability_testing_tool" = ["config.schema.json"]}

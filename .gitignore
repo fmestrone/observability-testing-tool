@@ -1,3 +1,6 @@
 __pycache__
 .venv
 config.obs.yaml
+.DS_Store
+src/observability_testing_tool.egg-info
+dist

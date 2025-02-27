@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import re
 from os import getenv
@@ -10,6 +11,7 @@ from datetime import timedelta
 from datetime import datetime
 
 import requests
+from observability_testing_tool.config.common import debug_log
 
 __OBSTOOL_NO_GCE_METADATA = (getenv("OBSTOOL_NO_GCE_METADATA") == "True" or getenv("OBSTOOL_DRY_RUN") == "True")
 
@@ -176,9 +178,16 @@ def configure_variables(entry_config: dict, logging_vars: dict):
 
 
 def parse_config(file: str = None) -> dict:
-    with open('config.schema.json') as schema_file:
+    # join() prepends segments, but if a segment is absolute, all other segments left of it are dropped
+    # realpath() resolves symbolic links and .. or . links
+    tool_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__), '..'))
+    debug_log("Parser: Base directory for tooling", tool_location)
+    with open(os.path.join(tool_location, 'config.schema.json')) as schema_file:
         schema = json.load(schema_file)
-    if file is None: file = "config.obs.yaml" # makes it easier to pass None at point of call
+    if file is None:
+        file = "config.obs.yaml" # makes it easier to pass None at point of call
+    file = os.path.realpath(os.path.join(os.getcwd(), file))
+    debug_log("Parser: Resolved configuration file", file)
     with open(file, 'r') as file:
         config = yaml.safe_load(file)
     jsonschema.validate(config, schema)

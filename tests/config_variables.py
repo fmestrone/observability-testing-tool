@@ -1,6 +1,6 @@
 import unittest
 
-from config.executor import expand_variables, format_str_payload
+from observability_testing_tool.config.executor import expand_variables, format_str_payload
 
 
 class VariableExpandTests(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 from datetime import timedelta
 
-from config.parser import parse_timedelta_value, parse_timedelta_interval
+from observability_testing_tool.config.parser import parse_timedelta_value, parse_timedelta_interval
 
 
 class TimeDeltaTests(unittest.TestCase):

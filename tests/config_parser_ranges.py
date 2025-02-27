@@ -1,6 +1,6 @@
 import unittest
 
-from config.parser import parse_float_range, parse_int_range
+from observability_testing_tool.config.parser import parse_float_range, parse_int_range
 
 
 class FloatRangeTests(unittest.TestCase):

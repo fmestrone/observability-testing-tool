@@ -1,6 +1,7 @@
-from config.common import info_log
+from observability_testing_tool.config.common import info_log
 
-from config.executor import prepare, run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
+from observability_testing_tool.config.executor import prepare, run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
+
 
 def main():
     info_log(">>> Obs Test Tool - Getting things going...")

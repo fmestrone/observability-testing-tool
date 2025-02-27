@@ -1,7 +1,7 @@
 import unittest
 from datetime import timedelta, datetime
 
-from config.parser import configure_entry_timings
+from observability_testing_tool.config.parser import configure_entry_timings
 
 
 class JobTimingsTests(unittest.TestCase):

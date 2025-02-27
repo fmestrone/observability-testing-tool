@@ -10,11 +10,11 @@ from os import environ
 from random import randrange
 from time import sleep, time
 
-from config.common import debug_log, info_log, error_log
-from config.parser import parse_config, prepare_config, next_timedelta_from_interval
+from observability_testing_tool.config.common import debug_log, info_log, error_log
+from observability_testing_tool.config.parser import parse_config, prepare_config, next_timedelta_from_interval
 
-from obs.cloud_logging import setup_logging_client, submit_log_entry, submit_log_entry_json, submit_log_entry_proto, logger
-from obs.cloud_monitoring import setup_monitoring_client, submit_gauge_metric, submit_metric_descriptor
+from observability_testing_tool.obs.cloud_logging import setup_logging_client, submit_log_entry, submit_log_entry_json, submit_log_entry_proto, logger
+from observability_testing_tool.obs.cloud_monitoring import setup_monitoring_client, submit_gauge_metric, submit_metric_descriptor
 
 
 _config = {}
