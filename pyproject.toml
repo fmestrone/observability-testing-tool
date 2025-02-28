@@ -9,6 +9,9 @@ build-backend = "setuptools.build_meta"
 name = "observability-testing-tool"
 version = "1.0.0"
 requires-python = ">= 3.12"
+description = "🛠️ A Python tool for generating bulk logs & metrics in Google Cloud. Simulate historical & live data to test alerts, refine LQL/SQL/PromQL queries, troubleshoot observability setups, and create structured data for training & automation."
+readme = "README_PyPI.md"
+license = {text = "GNU AFFERO GENERAL PUBLIC LICENSE"}
 # dependencies for the project
 # (can replace requirements.txt file)
 dependencies = [

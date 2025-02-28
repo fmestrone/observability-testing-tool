@@ -7,6 +7,7 @@
   - Useful links
     - https://packaging.python.org/en/latest/overview/
     - https://packaging.python.org/en/latest/tutorials/packaging-projects/
+    - https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
     - https://setuptools.pypa.io/en/latest/userguide/quickstart.html
     - https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
 - in order to install the dependencies needed for the build specified in the TOML file in the `[project.optional-dependencies]` section, run this command from the folder containing the `pyproject.toml` file
