@@ -25,6 +25,10 @@ Although primarily for internal use, it is publicly accessible.
 ### ➤ **Add a fallback property for GCE metadata data source**  
 🔹 When running without metadata connection () or in dry-run mode (`OBSTOOL_DRY_RUN=True`), this property allows to specify a fallback value to provide.
 
+### ➤ **Add Error Reporting support to logging**
+
+🔹 Simplify the creation of log entries that would be picked up by Error Reporting. Follow [these guidelines](https://cloud.google.com/error-reporting/docs/formatting-error-messages)
+
 ---
 
 ## 🚧 In Progress  
