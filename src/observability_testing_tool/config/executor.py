@@ -20,14 +20,10 @@ from observability_testing_tool.obs.cloud_monitoring import setup_monitoring_cli
 _config = {}
 
 
-def prepare():
+def prepare(config_file: str = None):
     global _config
-    if len(sys.argv) == 2:
-        filename = sys.argv[1]
-    else:
-        filename = None
     try:
-        _config = parse_config(filename)
+        _config = parse_config(config_file)
         if _config is None:
             error_log("No config information was found. Is the file empty?")
             exit(1)

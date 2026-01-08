@@ -1,7 +1,13 @@
-from os import getenv
+from os import getenv, environ
 
 
 __OBSTOOL_DEBUG = int(getenv("OBSTOOL_DEBUG", 0))
+
+
+def set_log_level(level: int):
+    global __OBSTOOL_DEBUG
+    __OBSTOOL_DEBUG = level
+    environ["OBSTOOL_DEBUG"] = str(level)
 
 
 def debug_log(message: str, object: any = None, exception: Exception = None):

@@ -24,11 +24,15 @@ Additionally, jobs can use **variables**, which are derived from **data sources*
 To execute these examples **without sending data** to Google Cloud, enable **dry-run mode** and **info logging**:
 
 ```shell
-OBSTOOL_DEBUG=1 OBSTOOL_DRY_RUN=True python main.py
+# Using the installed CLI
+OBSTOOL_DRY_RUN=True obs-tool -v config.obs.yaml
+
+# Or using the script directly
+OBSTOOL_DRY_RUN=True python src/observability_testing_tool/main.py -v config.obs.yaml
 ```
 
 - `OBSTOOL_DRY_RUN=True` prevents actual log/metric submission and logs the intended actions instead.  
-- `OBSTOOL_DEBUG=1` ensures that info logs are displayed — without it, no output would be shown, making the dry-run execution useless.
+- `-v` (info logging) or `-vv` (debug logging) ensures that logs are displayed — without it, no output would be shown for errors, making the execution less informative.
 
 ---
 

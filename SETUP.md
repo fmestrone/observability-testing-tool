@@ -2,15 +2,7 @@
 
 ## ⚙️ Setup
 
-### 1️⃣ Clone the Repository
-
-First, clone the project and navigate to the tool's top-level folder:  
-
-```bash
-git clone https://github.com/fmestrone/observability-testing-tool.git
-cd observability-testing-tool
-```
-### 2️⃣ Create a Virtual Environment
+### 1️⃣ Create a Virtual Environment
 
 Set up a Python virtual environment for the tool and activate it:
 
@@ -21,6 +13,10 @@ source ./.venv/bin/activate
 
 > [!IMPORTANT]
 > Ensure your system is running Python 3.12 or later.
+
+### 2️⃣ Install the Observability Testing Tool
+
+
 
 ### 3️⃣ Install Dependencies
 
@@ -67,15 +63,27 @@ Alternatively, you can authenticate using a **service account key**:
 Run the tool from the main directory:  
 
 ```bash
-python main.py [config-file]
+# Using the installed CLI
+obs-tool [config-file]
+
+# Or using the script directly
+python src/observability_testing_tool/main.py [config-file]
 ```
 
 > [!NOTE]
 > If no configuration file is specified, the tool defaults to using `config.obs.yaml` in the current folder.
 
-## 🛠 Environment Variables  
+## 🛠 Command-Line Options
 
-You can customize execution with the following environment variables:  
+The tool supports several command-line arguments:
+
+- `-v`, `--verbose`: Increase output verbosity. Use `-v` for `INFO` logs and `-vv` for `DEBUG` logs.
+- `--version`: Show the version of the tool.
+- `-h`, `--help`: Show the help message.
+
+## ⚙️ Environment Variables  
+
+You can also customize execution with the following environment variables (command-line options take precedence):  
 
 ### 🔍 **Debug Logging**  
 
@@ -94,11 +102,13 @@ Enable different log levels for troubleshooting:
 #### ✅ Example Usage:
 
 ```bash
-OBSTOOL_DEBUG=2 python main.py config.obs.yaml
+# Debug mode via CLI flag
+obs-tool -vv config.obs.yaml
 ```
 
 ```bash
-OBSTOOL_DEBUG=1 OBSTOOL_DRY_RUN=True python main.py config.obs.yaml
+# Dry-run mode with info logging
+OBSTOOL_DRY_RUN=True obs-tool -v config.obs.yaml
 ```
 
 ## 📌 Notes  
