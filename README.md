@@ -2,13 +2,14 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=yellow)  ![License](https://img.shields.io/github/license/fmestrone/observability-testing-tool)  ![GitHub Stars](https://img.shields.io/github/stars/fmestrone/observability-testing-tool?style=social)  ![GitHub Issues](https://img.shields.io/github/issues/fmestrone/observability-testing-tool)
 
-Easily generate bulk logs and metrics in Google Cloud Operations Suite to test alerts, validate queries, and simulate real-world observability scenarios.  
+Easily generate bulk logs and metrics in Google Cloud Operations Suite to test alerts, validate queries, and simulate real-world observability scenarios.
 
 ## 🚀 Use Cases  
 
 This Python-based tool is designed for:  
 
-### **Training & Education**  
+### **Training & Education**
+
 Successfully used in the _Advanced Observability Querying in Google Cloud_ course, it helps create logs and metrics for hands-on labs and classroom demos.  
 
 ### **Testing & Validation**  
