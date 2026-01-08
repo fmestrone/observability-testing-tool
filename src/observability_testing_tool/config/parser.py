@@ -177,15 +177,13 @@ def configure_variables(entry_config: dict, logging_vars: dict):
     entry_config["variables"] = [var for var in entry_vars.values()]
 
 
-def parse_config(file: str = None) -> dict:
+def parse_config(file: str) -> dict:
     # join() prepends segments, but if a segment is absolute, all other segments left of it are dropped
     # realpath() resolves symbolic links and .. or . links
     tool_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__), '..'))
     debug_log("Parser: Base directory for tooling", tool_location)
     with open(os.path.join(tool_location, 'config.schema.json')) as schema_file:
         schema = json.load(schema_file)
-    if file is None:
-        file = "config.obs.yaml" # makes it easier to pass None at point of call
     file = os.path.realpath(os.path.join(os.getcwd(), file))
     debug_log("Parser: Resolved configuration file", file)
     with open(file, 'r') as file:

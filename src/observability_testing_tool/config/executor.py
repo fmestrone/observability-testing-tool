@@ -20,7 +20,7 @@ from observability_testing_tool.obs.cloud_monitoring import setup_monitoring_cli
 _config = {}
 
 
-def prepare(config_file: str = None):
+def prepare(config_file: str):
     global _config
     try:
         _config = parse_config(config_file)
@@ -32,6 +32,7 @@ def prepare(config_file: str = None):
         error_log(str(e))
         exit(1)
     except Exception as e:
+        _config['__filename__'] = config_file
         error_log("There was an error parsing the configuration file", _config, e)
         exit(1)
 

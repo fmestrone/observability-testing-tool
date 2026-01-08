@@ -11,6 +11,7 @@ def main():
     parser.add_argument(
         "config",
         nargs="?",
+        default="config.obs.yaml",
         help="Path to the configuration YAML file. If not provided, it looks for config.obs.yaml in the current directory."
     )
     parser.add_argument(
@@ -28,11 +29,12 @@ def main():
     args = parser.parse_args()
 
     # Set log level based on verbosity
-    # 0: Errors only (default in common.py is 0, but main.py used to just call info_log which didn't show anything unless OBSTOOL_DEBUG >= 1)
+    # 0: Errors only
     # 1: Info (-v)
-    # 2: Debug (-vv)
-    if args.verbose > 0:
-        set_log_level(args.verbose)
+    # 2: Debug (-vv or more)
+    verbosity = min(args.verbose, 2)
+    if verbosity >= 0:
+        set_log_level(verbosity)
 
     try:
         info_log(">>> Obs Test Tool - Getting things going...")
