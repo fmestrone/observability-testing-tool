@@ -16,14 +16,8 @@ source ./.venv/bin/activate
 
 ### 2️⃣ Install the Observability Testing Tool
 
-
-
-### 3️⃣ Install Dependencies
-
-Install the required Python packages:
-
 ```bash
-pip install -r requirements.txt
+pip install observability-testing-tool
 ```
 
 ---
@@ -64,10 +58,7 @@ Run the tool from the main directory:
 
 ```bash
 # Using the installed CLI
-obs-tool [config-file]
-
-# Or using the script directly
-python src/observability_testing_tool/main.py [config-file]
+obs-tool [-v[v]] [config-file]
 ```
 
 > [!NOTE]
@@ -77,6 +68,8 @@ python src/observability_testing_tool/main.py [config-file]
 
 The tool supports several command-line arguments:
 
+- `--dry-run`: Simulates execution of the configuration without actually sending any logs or metrics to Google Cloud.
+- `--no-gce`: Skips calls to the GCE Metadata server, returing a dummy value instead.
 - `-v`, `--verbose`: Increase output verbosity. Use `-v` for `INFO` logs and `-vv` for `DEBUG` logs.
 - `--version`: Show the version of the tool.
 - `-h`, `--help`: Show the help message.
@@ -95,7 +88,7 @@ Enable different log levels for troubleshooting:
 
 ### 🏗️ **Metadata & Dry-Run Mode**  
 
-- `OBSTOOL_NO_GCE_METADATA=True` → Disables GCE metadata API checks (useful outside GCE)  
+- `OBSTOOL_NO_GCE_METADATA=True` → Disables GCE metadata API calls (useful outside GCE)  
 - `OBSTOOL_DRY_RUN=True` → Simulates execution without sending logs/metrics to Google Cloud  
   - _(Also implies `OBSTOOL_NO_GCE_METADATA=True`, so no metadata requests are sent in dry-run mode)_.  
 
@@ -104,11 +97,6 @@ Enable different log levels for troubleshooting:
 ```bash
 # Debug mode via CLI flag
 obs-tool -vv config.obs.yaml
-```
-
-```bash
-# Dry-run mode with info logging
-OBSTOOL_DRY_RUN=True obs-tool -v config.obs.yaml
 ```
 
 ## 📌 Notes  

@@ -8,16 +8,17 @@ Easily generate bulk logs and metrics in Google Cloud Operations Suite to test a
 
 This Python-based tool is designed for:  
 
-### **Training & Education**  
-Successfully used in the _Advanced Observability Querying in Google Cloud_ course, it helps create logs and metrics for hands-on labs and classroom demos.  
+- ### **Training & Education**  
 
-### **Testing & Validation**  
+  Successfully used in the _Advanced Observability Querying in Google Cloud_ course, it helps create logs and metrics for hands-on labs and classroom demos.  
 
-Use it to:  
+- ### **Testing & Validation**  
 
-- Simulate logs and metrics when testing expressions for Logs Explorer with **Logging Query Language** (LQL), for **Log Analytics** with SQL, and for Cloud Monitoring with **PromQL**.
+  Use it to:  
 
-- Generate real-time live data to test Cloud Monitoring **alerts and notifications**. 
+  - Simulate logs and metrics when testing expressions for Logs Explorer with **Logging Query Language** (LQL), for **Log Analytics** with SQL, and for Cloud Monitoring with **PromQL**.
+
+  - Generate real-time live data to test Cloud Monitoring **alerts and notifications**. 
 
 ---
 
@@ -25,26 +26,25 @@ Use it to:
 
 The tool supports two data generation modes, that can be mixed within the same run.
 
-### 📜 **Historical Logs & Metrics**  
+- ### 📜 **Historical Logs & Metrics**  
 
-- Bulk-generate logs and metrics for a past time window.  
+  Bulk-generate logs and metrics for a past time window.  
 
-
-- **Limits:**  
-  - _Google Cloud quotas apply: [Logging Limits](https://cloud.google.com/logging/quotas#log-limits), [Monitoring Limits](https://cloud.google.com/monitoring/custom-metrics/creating-metrics#writing-ts)_.
+  **Limits:**  
+  
+  - Google Cloud quotas apply: [Logging Limits](https://cloud.google.com/logging/quotas#log-limits), [Monitoring Limits](https://cloud.google.com/monitoring/custom-metrics/creating-metrics#writing-ts).
   
   - Logs: Up to **30 days in the past** and **1 day in the future**.  
 
   - Metrics: Up to **25 hours in the past** and **5 minutes in the future**.  
-  
 
-### ⏳ **Live Logs & Metrics**  
+- ### ⏳ **Live Logs & Metrics**  
 
-- Continuously generate logs and metrics between a **future start and end time**.
+  Continuously generate logs and metrics between a **future start and end time**.
 
-- The tool runs **until the specified end time**, creating data at the configured intervals.  
+  The tool runs **until the specified end time**, creating data at the configured intervals.  
 
-- **Ideal for testing alerts and notifications** in real-time.  
+  **Ideal for testing alerts and notifications** in real-time.  
 
 ---
 

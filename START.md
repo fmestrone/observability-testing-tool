@@ -9,7 +9,7 @@ Each **job** specifies:
 - **How often** to submit them  
 
 A **logging job** generates log entries, while a **monitoring job** generates metric values.  
-You can also define **metric descriptors** to create new metrics before submitting data.  
+You can also define **metric descriptors** to explicitly create new metrics before submitting data.  
 
 Additionally, jobs can use **variables**, which are derived from **data sources** defined in the configuration.  
 
