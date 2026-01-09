@@ -57,7 +57,7 @@ def main():
         info_log(">>> Obs Test Tool - Interrupted by user. Exiting...")
         sys.exit(0)
     except Exception as e:
-        error_log(">>> Obs Test Tool - An unexpected error occurred", exception=e)
+        error_log(">>> Obs Test Tool - An unexpected error occurred", ex=e)
         sys.exit(1)
 
 
