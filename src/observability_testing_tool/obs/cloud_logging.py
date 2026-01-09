@@ -3,13 +3,14 @@ import json
 import re
 from os import getenv
 
+from observability_testing_tool.config.common import is_dry_run
+
 import google.cloud.logging
 
 from logging import getLevelName
 
 from google.cloud.logging_v2 import Resource
 
-__OBSTOOL_DRY_RUN = (getenv("OBSTOOL_DRY_RUN") == "True")
 
 _regex_logname_format = re.compile(r"^projects/.+/logs/.+$")
 
@@ -18,7 +19,7 @@ usePythonLogging = False
 logger = None
 
 def setup_logging_client():
-    if __OBSTOOL_DRY_RUN: return
+    if is_dry_run(): return
     global loggingClient, logger
     loggingClient = google.cloud.logging.Client()
     if usePythonLogging:
@@ -76,7 +77,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
         if when is not None:
             extra["logger__timestamp"] = when.timestamp()
 
-        if not __OBSTOOL_DRY_RUN:
+        if not is_dry_run():
             logger.log(getLevelName(level), message, extra=extra)
 
     else:
@@ -90,7 +91,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
 
         if log_name is None:
             log_name = "python"
-        if not __OBSTOOL_DRY_RUN and not _regex_logname_format.match(log_name):
+        if not is_dry_run() and not _regex_logname_format.match(log_name):
             log_name = f"projects/{logger.project}/logs/{log_name}"
 
         metadata = {
@@ -104,7 +105,7 @@ def submit_log_entry(level, message, when = None, labels = None, resource_type =
             ),
             **other
         }
-        if not __OBSTOOL_DRY_RUN:
+        if not is_dry_run():
             match payloadStyle:
                 case "json":
                     logger.log_struct(message, **metadata)

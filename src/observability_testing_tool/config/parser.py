@@ -11,9 +11,7 @@ from datetime import timedelta
 from datetime import datetime
 
 import requests
-from observability_testing_tool.config.common import debug_log
-
-__OBSTOOL_NO_GCE_METADATA = (getenv("OBSTOOL_NO_GCE_METADATA") == "True" or getenv("OBSTOOL_DRY_RUN") == "True")
+from observability_testing_tool.config.common import debug_log, is_dry_run, is_not_gce
 
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
@@ -223,7 +221,7 @@ def prepare_config(config: dict):
 def get_gce_metadata(metadata_key: str) -> str:
     # This will only work from inside a GCE instance
     # See https://cloud.google.com/compute/docs/metadata/predefined-metadata-keys
-    if __OBSTOOL_NO_GCE_METADATA: return "NA"
+    if is_not_gce() or is_dry_run(): return "NA"
     metadata_server = "http://metadata.google.internal/computeMetadata/v1/"
     metadata_flavor = {"Metadata-Flavor" : "Google"}
     return requests.get(metadata_server + metadata_key, headers = metadata_flavor).text

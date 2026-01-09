@@ -1,7 +1,21 @@
 import argparse
 import sys
-from observability_testing_tool.config.common import info_log, set_log_level, error_log
+from importlib.metadata import version, PackageNotFoundError
+from observability_testing_tool.config.common import info_log, set_log_level, error_log, set_dry_run, set_not_gce
 from observability_testing_tool.config.executor import prepare, run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
+
+
+class VersionAction(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        try:
+            pkg_version = version("observability-testing-tool")
+        except PackageNotFoundError:
+            pkg_version = "unknown"
+        print(f"observability-testing-tool {pkg_version}")
+        parser.exit()
 
 
 def main():
@@ -22,8 +36,18 @@ def main():
     )
     parser.add_argument(
         "--version",
-        action="version",
-        version="observability-testing-tool 1.0.0"
+        action=VersionAction,
+        help="Show the tool's version and exit."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run without making any changes."
+    )
+    parser.add_argument(
+        "--no-gce",
+        action="store_true",
+        help="Run without requesting GCE metadata."
     )
 
     args = parser.parse_args()
@@ -33,8 +57,17 @@ def main():
     # 1: Info (-v)
     # 2: Debug (-vv or more)
     verbosity = min(args.verbose, 2)
-    if verbosity >= 0:
+    # If param not set, let the environment variable determine behaviour
+    if verbosity > 0:
         set_log_level(verbosity)
+
+    # If param not set, let the environment variable determine behaviour
+    if args.dry_run:
+        set_dry_run(True)
+
+    # If param not set, let the environment variable determine behaviour
+    if args.no_gce:
+        set_not_gce(True)
 
     try:
         info_log(">>> Obs Test Tool - Getting things going...")
@@ -52,7 +85,9 @@ def main():
             p1.join()
         if p2 is not None:
             p2.join()
-            
+
+        info_log(">>> Obs Test Tool - All done!")
+
     except KeyboardInterrupt:
         info_log(">>> Obs Test Tool - Interrupted by user. Exiting...")
         sys.exit(0)
@@ -62,4 +97,11 @@ def main():
 
 
 if __name__ == '__main__':
+
+    # Check Python version before doing anything else
+    if sys.version_info < (3, 12):
+        error_log("Error: This tool requires Python 3.12 or higher.")
+        error_log(f"Current version: {sys.version.split()[0]}")
+        sys.exit(1)
+
     main()

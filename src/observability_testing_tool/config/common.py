@@ -10,6 +10,28 @@ def set_log_level(level: int):
     environ["OBSTOOL_DEBUG"] = str(level)
 
 
+def set_dry_run(dry_run: bool):
+    if dry_run:
+        environ["OBSTOOL_DRY_RUN"] = "True"
+    else:
+        environ["OBSTOOL_DRY_RUN"] = "False"
+
+
+def is_dry_run() -> bool:
+    return getenv("OBSTOOL_DRY_RUN") == "True"
+
+
+def set_not_gce(no_meta: bool):
+    if no_meta:
+        environ["OBSTOOL_NO_GCE_METADATA"] = "True"
+    else:
+        environ["OBSTOOL_NO_GCE_METADATA"] = "False"
+
+
+def is_not_gce() -> bool:
+    return getenv("OBSTOOL_NO_GCE_METADATA") == "True"
+
+
 def debug_log(message: str, obj = None, ex: Exception = None):
 
     if __OBSTOOL_DEBUG >= 2:
