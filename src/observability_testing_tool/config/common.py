@@ -1,7 +1,6 @@
 from os import getenv, environ
 
 
-__OBSTOOL_DEBUG = int(getenv("OBSTOOL_DEBUG", 0))
 def set_skip_schema(skip: bool):
     if skip:
         environ["OBSTOOL_SKIP_VALIDATION"] = "True"
@@ -14,9 +13,11 @@ def should_skip_schema() -> bool:
 
 
 def set_log_level(level: int):
-    global __OBSTOOL_DEBUG
-    __OBSTOOL_DEBUG = level
     environ["OBSTOOL_DEBUG"] = str(level)
+
+
+def get_log_level() -> int:
+    return int(getenv("OBSTOOL_DEBUG", 0))
 
 
 def set_dry_run(dry_run: bool):
@@ -43,13 +44,13 @@ def is_not_gce() -> bool:
 
 def debug_log(message: str, obj = None, ex: Exception = None):
 
-    if __OBSTOOL_DEBUG >= 2:
+    if get_log_level() >= 2:
         error_log(message, obj, ex, level="D")
 
 
 def info_log(message: str, obj = None, ex: Exception = None):
 
-    if __OBSTOOL_DEBUG >= 1:
+    if get_log_level() >= 1:
         error_log(message, obj, ex, level="I")
 
 
@@ -65,7 +66,7 @@ def error_log(message: str, obj = None, ex: Exception = None, level: str = "E"):
     if obj is not None:
         print(f"{log_header} ", obj, sep="| ")
     if ex is not None:
-        if __OBSTOOL_DEBUG >= 2:
+        if get_log_level() >= 2:
             print(f"{log_header} ", "".join(format_exception(ex, limit=None, chain=True)), sep="| ")
         else:
             print(f"{log_header} ", repr(ex), sep="| ")

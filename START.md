@@ -25,13 +25,13 @@ To execute these examples **without sending data** to Google Cloud, enable **dry
 
 ```shell
 # Using the installed CLI
-OBSTOOL_DRY_RUN=True obs-tool -v config.obs.yaml
+obs-tool -v --dry-run config.obs.yaml
 
-# Or using the script directly
-OBSTOOL_DRY_RUN=True python src/observability_testing_tool/main.py -v config.obs.yaml
+# Or using the script directly and environment variables
+OBSTOOL_DRY_RUN=True OBSTOOL_DEBUG=1 python src/observability_testing_tool/main.py config.obs.yaml
 ```
 
-- `OBSTOOL_DRY_RUN=True` prevents actual log/metric submission and logs the intended actions instead.  
+- `--dry-run` prevents actual log/metric submission and logs the intended actions instead.  
 - `-v` (info logging) or `-vv` (debug logging) ensures that logs are displayed — without it, no output would be shown for errors, making the execution less informative.
 
 ---
