@@ -70,6 +70,7 @@ The tool supports several command-line arguments:
 
 - `--dry-run`: Simulates execution of the configuration without actually sending any logs or metrics to Google Cloud.
 - `--no-gce`: Skips calls to the GCE Metadata server, returing a dummy value instead.
+- `--skip-schema-validation`: Does not validate your YAML configuration file against the tool's schema. *Only use this option if you think the schema is not correctly processing a valid configuration file.*
 - `-v`, `--verbose`: Increase output verbosity. Use `-v` for `INFO` logs and `-vv` for `DEBUG` logs.
 - `--version`: Show the version of the tool.
 - `-h`, `--help`: Show the help message.

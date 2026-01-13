@@ -1,7 +1,7 @@
 import argparse
 import sys
 from importlib.metadata import version, PackageNotFoundError
-from observability_testing_tool.config.common import info_log, set_log_level, error_log, set_dry_run, set_not_gce
+from observability_testing_tool.config.common import info_log, set_log_level, error_log, set_dry_run, set_not_gce, set_skip_schema
 from observability_testing_tool.config.executor import prepare, run_logging_jobs, create_metrics_descriptors, run_monitoring_jobs
 
 
@@ -49,6 +49,11 @@ def main():
         action="store_true",
         help="Run without requesting GCE metadata."
     )
+    parser.add_argument(
+        "--skip-schema-validation",
+        action="store_true",
+        help="Do not run schema validation against the configuration file. Do not use unless you know fully well why you're doing it."
+    )
 
     args = parser.parse_args()
 
@@ -68,6 +73,10 @@ def main():
     # If param not set, let the environment variable determine behaviour
     if args.no_gce:
         set_not_gce(True)
+
+    # If param not set, let the environment variable determine behaviour
+    if args.skip_schema_validation:
+        set_skip_schema(True)
 
     try:
         info_log(">>> Obs Test Tool - Getting things going...")

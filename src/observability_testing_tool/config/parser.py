@@ -11,7 +11,7 @@ from datetime import timedelta
 from datetime import datetime
 
 import requests
-from observability_testing_tool.config.common import debug_log, is_dry_run, is_not_gce
+from observability_testing_tool.config.common import debug_log, info_log, is_dry_run, is_not_gce, should_skip_schema
 
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
@@ -180,13 +180,17 @@ def parse_config(file: str) -> dict:
     # realpath() resolves symbolic links and .. or . links
     tool_location = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__), '..'))
     debug_log("Parser: Base directory for tooling", tool_location)
-    with open(os.path.join(tool_location, 'config.schema.json')) as schema_file:
-        schema = json.load(schema_file)
+    if should_skip_schema():
+        info_log("WARNING! Skipping schema validation as requested...")
+    else:
+        with open(os.path.join(tool_location, 'config.schema.json')) as schema_file:
+            schema = json.load(schema_file)
     file = os.path.realpath(os.path.join(os.getcwd(), file))
     debug_log("Parser: Resolved configuration file", file)
     with open(file, 'r') as file:
         config = yaml.safe_load(file)
-    jsonschema.validate(config, schema)
+    if not should_skip_schema():
+        jsonschema.validate(config, schema)
     return config
 
 

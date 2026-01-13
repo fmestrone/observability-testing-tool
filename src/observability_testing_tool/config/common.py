@@ -2,6 +2,15 @@ from os import getenv, environ
 
 
 __OBSTOOL_DEBUG = int(getenv("OBSTOOL_DEBUG", 0))
+def set_skip_schema(skip: bool):
+    if skip:
+        environ["OBSTOOL_SKIP_VALIDATION"] = "True"
+    else:
+        environ["OBSTOOL_SKIP_VALIDATION"] = "False"
+
+
+def should_skip_schema() -> bool:
+    return getenv("OBSTOOL_SKIP_VALIDATION") == "True"
 
 
 def set_log_level(level: int):

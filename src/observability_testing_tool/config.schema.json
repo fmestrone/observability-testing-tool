@@ -184,7 +184,7 @@
             "selector": {
               "oneOf": [
                 { "enum": [ "any", "first", "last", "all" ] },
-                { "type": "number" }
+                { "type": "integer" }
               ]
             }
            },
