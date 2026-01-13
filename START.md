@@ -112,7 +112,7 @@ loggingJobs:
 ```yaml
 dataSources:
   vmId:
-    type: "gce-metadata"
+    sourceType: "gce-metadata"
     value: "instance/id"
 loggingJobs:
   - startOffset: "-5h"
@@ -132,7 +132,7 @@ loggingJobs:
 ```yaml
 dataSources:
   cpuUsageValue:
-    type: "random"
+    sourceType: "random"
     value: "float"
     range: "10.0~99.0"
 monitoringJobs:
@@ -155,7 +155,7 @@ monitoringJobs:
 ```yaml
 dataSources:
   someIpAddresses:
-    type: "list"
+    sourceType: "list"
     value:
       - 192.168.0.1
       - 192.168.0.12
@@ -186,12 +186,12 @@ loggingJobs:
 
 ### Get the fully qualified metadata for the GCE instance zone, then extract the simple name in the variable
 
-The GCE metadata for the instance zone is in the format _/projects/<project-id>/zones/<zone-id>_, but in resource labels for log entries and metrics, only the simple name is expected. We can use the `extract` attribute of a variable to apply a regular expression to it with a single capturing group to extract the desired information. 
+The GCE metadata for the instance zone is in the format _/projects/\<project-id\>/zones/\<zone-id\>_, but in resource labels for log entries and metrics, only the simple name is expected. We can use the `extract` attribute of a variable to apply a regular expression to it with a single capturing group to extract the desired information. 
 
 ```yaml
 dataSources:
   vmZone:
-    type: "gce-metadata"
+    sourceType: "gce-metadata"
     value: "instance/zone"
 loggingJobs:
   - startOffset: "-5h"
@@ -209,13 +209,13 @@ loggingJobs:
 ```yaml
 dataSources:
   cnxlogs:
-    type: "list"
+    sourceType: "list"
     value:
       - ["CRITICAL", "Too many denied attempts from"]
       - ["INFO", "Access succeeded from"]
       - ["WARNING", "Access failed from"]
   ips:
-    type: "list"
+    sourceType: "list"
     value:
       - "111.144.187.212"
       - "233.142.26.173"
