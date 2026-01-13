@@ -385,7 +385,7 @@ def handle_monitoring_job(submit_time: datetime, job: dict, vars_dict: dict):
         resource_labels = format_dict_payload(vars_dict, job.get("resourceLabels"))
         project_id = format_str_payload(vars_dict, job.get("projectId"))
 
-    info_log(f"{job_key}: Sending {metric_type} in {project_id} = {metric_value}")
+    info_log(f"{job_key}: Sending {metric_type} in {project_id} = {metric_value} at {submit_time}")
     submit_gauge_metric(
         metric_value, metric_type, submit_time,
         project_id=project_id,
