@@ -15,6 +15,12 @@ The process is automated with GitHub workflows and a release tool in the `src` f
   python src/release_tool.py
   ```
 
+## Credentials
+
+The credentials for the publication are configured in PyPI by setting up a trusted publisher for the project from Github, GitLab, ActiveState, or Google.
+
+There is no need for tokens or env vars in the build process itself.
+
 ## Verifying the PyPI installation
 
 Once uploaded, it is critical to verify the package works by installing it in a fresh environment.
