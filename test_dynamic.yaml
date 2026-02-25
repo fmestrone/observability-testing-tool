@@ -1,0 +1,41 @@
+dataSources:
+  exponentialValue:
+    sourceType: "dynamic"
+    formula: "exponential"
+    base: 1.0
+    factor: 2.0
+    offset: 0.0
+  sinusoidalValue:
+    sourceType: "dynamic"
+    formula: "sinusoidal"
+    base: 50.0
+    amplitude: 10.0
+    period: 60.0
+  backoffValue:
+    sourceType: "dynamic"
+    formula: "backoff"
+    base: 1.0
+    factor: 2.0
+  linearValue:
+    sourceType: "dynamic"
+    formula: "linear"
+    slope: 5.0
+    intercept: 10.0
+    offset: 0.0
+
+loggingJobs:
+  - id: "dynamic-test"
+    frequency: "1s"
+    startOffset: "0s"
+    endOffset: "5s"
+    textPayload: "Dynamic values - Exp: {exp}, Sin: {sin}, Backoff: {backoff}, Linear: {linear}"
+    level: INFO
+    variables:
+      - name: "exp"
+        dataSource: "exponentialValue"
+      - name: "sin"
+        dataSource: "sinusoidalValue"
+      - name: "backoff"
+        dataSource: "backoffValue"
+      - name: "linear"
+        dataSource: "linearValue"

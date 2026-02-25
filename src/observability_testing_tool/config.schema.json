@@ -4,7 +4,10 @@
   "$defs": {
     "timeDurationFrequencyPattern": {
       "description": "A pattern that checks a frequency or duration definition, either single value (e.g. 15s, 3m, 2d) or as a from/to range (e.g. 15s~30s, 3m~2h, 6h~2d) - it will be up to the application to confirm suitability in the context - this is parsed in parser#parse_timedelta_value and parser#parse_timedelta_interval",
-      "pattern": "^ *-? *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *(~ *(-?) *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *)?$"
+      "oneOf": [
+        { "pattern": "^ *-? *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *(~ *(-?) *(([.\\d]+?)d)? *(([.\\d]+?)h)? *(([.\\d]+?)m)? *(([.\\d]+?)s)? *((\\d+?)ms)? *)?$" },
+        { "$ref": "#/$defs/interpolatedProperty" }
+      ]
     },
     "numericPattern": {
       "description": "A pattern that checks an integer or float definition, either single value (e.g. 4.5, 3, -12) or as a from/to/step range (e.g. 15~3~2, 30~60, -12.5~12.5) - it will be up to the application to confirm suitability in the context - this is parsed in parser#parse_int_range() and parser#parse_float_range",
@@ -33,13 +36,22 @@
     "dataSourceProperties": {
       "description": "The definition of a data source for variables.",
       "type": "object",
-      "required": [ "sourceType", "value" ],
+      "required": [ "sourceType" ],
       "properties": {
         "sourceType": {
-          "enum": [ "list", "env", "random", "gce-metadata", "fixed" ]
+          "enum": [ "list", "env", "random", "gce-metadata", "fixed", "dynamic" ]
         },
         "value": { },
-        "range": { }
+        "range": { },
+        "formula": { "type": ["string", "null"] },
+        "base": { "type": ["number", "null"] },
+        "factor": { "type": ["number", "null"] },
+        "amplitude": { "type": ["number", "null"] },
+        "period": { "type": ["number", "null"] },
+        "phase": { "type": ["number", "null"] },
+        "slope": { "type": ["number", "null"] },
+        "intercept": { "type": ["number", "null"] },
+        "offset": { "type": ["number", "null"] }
       },
       "allOf": [
         {
@@ -55,7 +67,8 @@
               "value": {
                 "type": "array"
               }
-            }
+            },
+            "required": [ "value" ]
           }
         },
         {
@@ -71,7 +84,8 @@
               "value": {
                 "type": "string"
               }
-            }
+            },
+            "required": [ "value" ]
           }
         },
         {
@@ -112,7 +126,8 @@
               "value": {
                 "type": "string"
               }
-            }
+            },
+            "required": [ "value" ]
           }
         },
         {
@@ -128,6 +143,31 @@
               "value": {
                 "type": "string"
               }
+            },
+            "required": [ "value" ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sourceType": {
+                "const": "dynamic"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "formula": {
+                "enum": [ "linear", "exponential", "sinusoidal", "backoff" ]
+              },
+              "base": { "type": "number" },
+              "factor": { "type": "number" },
+              "amplitude": { "type": "number" },
+              "period": { "type": "number" },
+              "phase": { "type": "number" },
+              "slope": { "type": "number" },
+              "intercept": { "type": "number" },
+              "offset": { "type": "number" }
             }
           }
         }

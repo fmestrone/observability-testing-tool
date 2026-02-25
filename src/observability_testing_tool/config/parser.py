@@ -15,7 +15,7 @@ from observability_testing_tool.config.common import debug_log, info_log, is_dry
 
 _regex_duration = re.compile(r'^ *(-?) *((?P<days>[.\d]+?)d)? *((?P<hours>[.\d]+?)h)? *((?P<minutes>[.\d]+?)m)? *((?P<seconds>[.\d]+?)s)? *((?P<milliseconds>\d+?)ms)? *$')
 
-_datasource_types = ["env", "list", "random", "gce-metadata", "fixed"]
+_datasource_types = ["env", "list", "random", "gce-metadata", "fixed", "dynamic"]
 _datasource_random_values = ["int", "float"]
 
 
@@ -148,7 +148,8 @@ def configure_entry_timings(entry_config: dict, logging_job: dict):
         entry_config["frequency"] = "1d"
         entry_config["endTime"] = entry_config["startTime"] + timedelta(hours=1)
 
-    entry_config["frequency"] = parse_timedelta_interval(entry_config["frequency"])
+    if not isinstance(entry_config["frequency"], str) or "{" not in entry_config["frequency"]:
+        entry_config["frequency"] = parse_timedelta_interval(entry_config["frequency"])
 
     if logging_job["live"] and entry_config["startTime"] < current_timestamp:
         raise ValueError("Live job must start now or later")
@@ -309,3 +310,6 @@ def configure_data_source(data_source: dict):
                     data_source["range"] = parse_float_range(data_source_range)
             case "gce-metadata":
                 data_source["__value__"] = get_gce_metadata(data_source_value)
+            case "dynamic":
+                # no-op for now as it is all handled in the executor
+                pass

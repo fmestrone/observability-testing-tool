@@ -1,0 +1,17 @@
+dataSources:
+  backoffFreq:
+    sourceType: "dynamic"
+    formula: "backoff"
+    base: 1.0
+    factor: 2.0
+
+loggingJobs:
+  - id: "dynamic-freq-test"
+    frequency: "{freq}s"
+    startOffset: "0s"
+    endOffset: "10s"
+    textPayload: "Current frequency variable: {freq}"
+    level: INFO
+    variables:
+      - name: "freq"
+        dataSource: "backoffFreq"

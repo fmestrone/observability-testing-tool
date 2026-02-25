@@ -1,3 +1,4 @@
+import math
 import random
 import re
 import sched
@@ -11,7 +12,7 @@ from random import randrange
 from time import sleep, time
 
 from observability_testing_tool.config.common import debug_log, info_log, error_log
-from observability_testing_tool.config.parser import parse_config, prepare_config, next_timedelta_from_interval
+from observability_testing_tool.config.parser import parse_config, prepare_config, next_timedelta_from_interval, parse_timedelta_interval
 
 from observability_testing_tool.obs.cloud_logging import setup_logging_client, submit_log_entry, submit_log_entry_json, submit_log_entry_proto, logger
 from observability_testing_tool.obs.cloud_monitoring import setup_monitoring_client, submit_gauge_metric, submit_metric_descriptor
@@ -82,7 +83,7 @@ def _split_var_name_index(var_name):
 
 
 # need the data sources for testability
-def expand_variables(variables: list, data_sources: dict) -> dict | None:
+def expand_variables(variables: list, data_sources: dict, submit_time: datetime = None) -> dict | None:
     if variables is None: return None
     debug_log("Received request to expand variables", variables)
     variables_expanded = {}
@@ -100,7 +101,7 @@ def expand_variables(variables: list, data_sources: dict) -> dict | None:
         if data_source is None:
             raise ValueError(f"Data source for '{var_name}' does not exist")
 
-        data_source_value = data_source["value"]
+        data_source_value = data_source.get("value")
         match data_source["sourceType"]:
             case "list":
                 var_list_selector = var_config.get("selector", "any")
@@ -122,7 +123,45 @@ def expand_variables(variables: list, data_sources: dict) -> dict | None:
                 variables_expanded[var_name] = data_source["__value__"]
             case "fixed":
                 # This type is mostly needed for testing and debugging
-                variables_expanded[var_name] = data_source["value"]
+                variables_expanded[var_name] = data_source_value
+            case "dynamic":
+                formula = data_source.get("formula", "linear")
+                # establish a reference start time per data source
+                now_dt = submit_time if submit_time else datetime.now()
+                t0 = data_source.get("__t0__")
+                if t0 is None:
+                    data_source["__t0__"] = now_dt
+                    t_seconds = 0.0
+                else:
+                    # t0 stored as datetime
+                    t_seconds = (now_dt - t0).total_seconds()
+                
+                if formula == "exponential":
+                    # value = base * exp(rate * t)
+                    base = float(data_source.get("base", 1.0))
+                    rate = float(data_source.get("factor", 1.0))
+                    variables_expanded[var_name] = base * math.exp(rate * t_seconds)
+                elif formula == "sinusoidal":
+                    # value = base + amplitude * sin(2 * pi * t / period + phase)
+                    base = float(data_source.get("base", 0.0))
+                    amplitude = float(data_source.get("amplitude", 1.0))
+                    period = float(data_source.get("period", 60.0))
+                    phase = float(data_source.get("phase", 0.0))
+                    # avoid division by zero
+                    period = period if period != 0 else 1.0
+                    variables_expanded[var_name] = base + amplitude * math.sin(2 * math.pi * t_seconds / period + phase)
+                elif formula == "backoff":
+                    # value = base * (factor ^ attempt)
+                    base = float(data_source.get("base", 1.0))
+                    factor = float(data_source.get("factor", 2.0))
+                    if "__counter__" not in data_source:
+                        data_source["__counter__"] = 0
+                    variables_expanded[var_name] = base * math.pow(factor, data_source["__counter__"])
+                    data_source["__counter__"] += 1
+                else: # linear or default
+                    slope = float(data_source.get("slope", 1.0))
+                    intercept = float(data_source.get("intercept", 0.0))
+                    variables_expanded[var_name] = slope * t_seconds + intercept
 
         var_index = var_config.get("index")
         if var_index is not None:
@@ -253,15 +292,26 @@ def _run_live_jobs(jobs_key: str, entries_key: str, handler: Callable, config: d
     exit(0)
 
 
+def _evaluate_frequency(frequency, vars_dict):
+    if isinstance(frequency, str) and "{" in frequency:
+        # Interpolate and then parse
+        freq_str = format_str_payload(vars_dict, frequency)
+        return parse_timedelta_interval(freq_str)
+    return frequency
+
+
 def _handle_live_job(schedule: sched.scheduler, job: dict, data_sources: dict, handler: Callable):
     job_key = job["id"]
     debug_log(f"{job_key}: Running scheduled job", job)
     if datetime.now() >= job["endTime"]:
         info_log(f"{job_key}: Job has completed (past end time)")
         return
-    vars_dict = expand_variables(job.get("variables"), data_sources)
-    handler(datetime.now(), job, vars_dict)
-    next_time = next_timedelta_from_interval(job["frequency"])
+    now = datetime.now()
+    vars_dict = expand_variables(job.get("variables"), data_sources, now)
+    handler(now, job, vars_dict)
+    
+    current_freq = _evaluate_frequency(job["frequency"], vars_dict)
+    next_time = next_timedelta_from_interval(current_freq)
     info_log(f"{job_key}: Next Execution in {next_time}")
     schedule.enter(next_time.total_seconds(), 1, _handle_live_job, (schedule, job, data_sources, handler))
 
@@ -280,11 +330,12 @@ def _run_batch_jobs(jobs_key: str, entry_key: str, handler: Callable):
             info_log(f"{entry['id']}: Starting job from {submit_time} to {end_time} every {frequency}")
             while submit_time < end_time:
                 sleep(0.05) # avoid exceeding burn rate of API
-                vars_dict = expand_variables(entry["variables"], _config["dataSources"])
+                vars_dict = expand_variables(entry["variables"], _config["dataSources"], submit_time)
 
                 handler(submit_time, entry, vars_dict)
 
-                submit_time += next_timedelta_from_interval(frequency)
+                current_freq = _evaluate_frequency(frequency, vars_dict)
+                submit_time += next_timedelta_from_interval(current_freq)
 
 
 def handle_logging_job(submit_time: datetime, job: dict, vars_dict: dict):
@@ -351,7 +402,7 @@ def create_metrics_descriptors():
         metric_kind = metric_descriptor.get("metricKind")
         value_type = metric_descriptor.get("valueType")
         metric_name = metric_descriptor.get("name")
-        vars_dict = expand_variables(metric_descriptor.get("variables"), _config["dataSources"])
+        vars_dict = expand_variables(metric_descriptor.get("variables"), _config["dataSources"], datetime.now())
         if vars_dict is not None:
             project_id = format_str_payload(vars_dict, project_id)
 
