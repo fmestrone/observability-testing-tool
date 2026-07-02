@@ -2,7 +2,6 @@ import math
 import random
 import re
 import sched
-import sys
 from multiprocessing import Process
 from collections.abc import Callable
 
@@ -135,33 +134,36 @@ def expand_variables(variables: list, data_sources: dict, submit_time: datetime 
                 else:
                     # t0 stored as datetime
                     t_seconds = (now_dt - t0).total_seconds()
-                
-                if formula == "exponential":
-                    # value = base * exp(rate * t)
-                    base = float(data_source.get("base", 1.0))
-                    rate = float(data_source.get("factor", 1.0))
-                    variables_expanded[var_name] = base * math.exp(rate * t_seconds)
-                elif formula == "sinusoidal":
-                    # value = base + amplitude * sin(2 * pi * t / period + phase)
-                    base = float(data_source.get("base", 0.0))
-                    amplitude = float(data_source.get("amplitude", 1.0))
-                    period = float(data_source.get("period", 60.0))
-                    phase = float(data_source.get("phase", 0.0))
-                    # avoid division by zero
-                    period = period if period != 0 else 1.0
-                    variables_expanded[var_name] = base + amplitude * math.sin(2 * math.pi * t_seconds / period + phase)
-                elif formula == "backoff":
-                    # value = base * (factor ^ attempt)
-                    base = float(data_source.get("base", 1.0))
-                    factor = float(data_source.get("factor", 2.0))
-                    if "__counter__" not in data_source:
-                        data_source["__counter__"] = 0
-                    variables_expanded[var_name] = base * math.pow(factor, data_source["__counter__"])
-                    data_source["__counter__"] += 1
-                else: # linear or default
-                    slope = float(data_source.get("slope", 1.0))
-                    intercept = float(data_source.get("intercept", 0.0))
-                    variables_expanded[var_name] = slope * t_seconds + intercept
+                try:
+                    if formula == "exponential":
+                        # value = base * exp(rate * t)
+                        base = float(data_source.get("base", 1.0))
+                        rate = float(data_source.get("factor", 1.0))
+                        variables_expanded[var_name] = base * math.exp(rate * t_seconds)
+                    elif formula == "sinusoidal":
+                        # value = base + amplitude * sin(2 * pi * t / period + phase)
+                        base = float(data_source.get("base", 0.0))
+                        amplitude = float(data_source.get("amplitude", 1.0))
+                        period = float(data_source.get("period", 60.0))
+                        phase = float(data_source.get("phase", 0.0))
+                        # avoid division by zero
+                        period = period if period != 0 else 1.0
+                        variables_expanded[var_name] = base + amplitude * math.sin(2 * math.pi * t_seconds / period + phase)
+                    elif formula == "backoff":
+                        # value = base * (factor ^ attempt)
+                        base = float(data_source.get("base", 1.0))
+                        factor = float(data_source.get("factor", 2.0))
+                        if "__counter__" not in data_source:
+                            data_source["__counter__"] = 0
+                        variables_expanded[var_name] = base * math.pow(factor, data_source["__counter__"])
+                        data_source["__counter__"] += 1
+                    else: # linear or default
+                        slope = float(data_source.get("slope", 1.0))
+                        intercept = float(data_source.get("intercept", 0.0))
+                        variables_expanded[var_name] = slope * t_seconds + intercept
+                except OverflowError as e:
+                    error_log(f"Overflow error in synthetic value for variable '{var_name}'", ex = e)
+                    variables_expanded[var_name] = float("nan")
 
         var_index = var_config.get("index")
         if var_index is not None:
